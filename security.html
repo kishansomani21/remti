@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Security — Remti</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  .page-head { padding: 72px 0 32px; }
+  .page-head h1 { font-size: clamp(44px, 6vw, 72px); letter-spacing: -0.03em; line-height: 1.02; }
+  .page-head p.lead { font-size: 19px; color: var(--ink2); max-width: 640px; margin-top: 20px; }
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .pillars { grid-template-columns: 1fr; } }
+  .pillar { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-xl); padding: 28px; }
+  .pillar .ic { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-alt); display: grid; place-items: center; margin-bottom: 20px; }
+  .pillar h3 { font-size: 19px; letter-spacing: -0.01em; margin: 0 0 8px; }
+  .pillar p { color: var(--ink2); font-size: 14px; line-height: 1.55; margin: 0; }
+  .certs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .certs { grid-template-columns: 1fr 1fr; } }
+  .cert { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg); padding: 28px 20px; text-align: center; }
+  .cert .badge {
+    width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%;
+    background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700;
+    font-family: ui-rounded, system-ui, sans-serif;
+  }
+  .cert h4 { font-size: 15px; margin: 0; }
+  .cert p { color: var(--ink3); font-size: 12px; margin: 4px 0 0; }
+  .money-flow {
+    background: var(--ink); color: #fff; border-radius: var(--r-xl); padding: 48px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+  }
+  @media (max-width: 860px) { .money-flow { grid-template-columns: 1fr; padding: 32px; } }
+  .flow-diagram { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--r-lg); padding: 24px; }
+  .flow-node { display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
+  .flow-arrow { text-align: center; color: rgba(255,255,255,0.4); padding: 8px 0; font-size: 12px; }
+  .flow-node .nm { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.12); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+  .flow-node .lb { font-weight: 600; font-size: 14px; }
+  .flow-node .sb { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+  .flow-node.me { background: rgba(176,74,29,0.2); border-color: var(--sup-red); }
+  .flow-node.bank { background: rgba(47,110,62,0.2); border-color: var(--positive); }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 32px 0; }
+  @media (max-width: 860px) { .stat-row { grid-template-columns: 1fr 1fr; } }
+  .stat .v { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; font-family: ui-rounded, system-ui, sans-serif; }
+  .stat .l { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+  .feature-list { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-xl); overflow: hidden; }
+  .feature-list .row-item { display: grid; grid-template-columns: 40px 1fr auto; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--hair); align-items: center; }
+  .feature-list .row-item:last-child { border: 0; }
+  .feature-list .row-item .ic { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-elev); display: grid; place-items: center; }
+  .feature-list .row-item h4 { font-size: 15px; margin: 0; font-weight: 600; }
+  .feature-list .row-item p { font-size: 13px; color: var(--ink3); margin: 2px 0 0; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="shell nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark">R</span> Remti</a>
+    <nav class="nav-links">
+      <a href="product.html">Product</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="security.html" class="active">Security</a>
+      <a href="about.html">About</a>
+      <a href="dashboard.html">Dashboard</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-ghost" href="login.html">Log in</a>
+      <a class="btn btn-primary" href="login.html?signup=1">Get started</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-head">
+  <div class="shell">
+    <div class="eyebrow">Security &amp; trust</div>
+    <h1 class="rise">Your money.<br/>Your bank. Always.</h1>
+    <p class="lead rise-2 muted">Remti is an Open Banking orchestrator, not a custodian. We never take possession of your funds — every payment is authorised by you, executed by your bank.</p>
+  </div>
+</section>
+
+<!-- Money flow -->
+<section style="padding-top: 32px">
+  <div class="shell">
+    <div class="money-flow">
+      <div>
+        <div class="eyebrow" style="color:rgba(255,255,255,0.55)">How your money moves</div>
+        <h2 class="h1" style="margin-top:12px">Three steps.<br/>Never through us.</h2>
+        <p style="color:rgba(255,255,255,0.65);margin-top:16px">Every payment is a direct instruction from your bank account to your supplier's bank account. Remti orchestrates the handshake — we never hold, route, or process funds.</p>
+      </div>
+      <div class="flow-diagram">
+        <div class="flow-node me">
+          <div class="nm">1</div>
+          <div><div class="lb">Your business bank</div><div class="sb">Barclays ·••4829</div></div>
+        </div>
+        <div class="flow-arrow">↓ Faster Payments, 1–2 hrs</div>
+        <div class="flow-node bank">
+          <div class="nm">2</div>
+          <div><div class="lb">Supplier's bank</div><div class="sb">Direct settlement</div></div>
+        </div>
+        <div class="flow-arrow" style="font-size:11px;opacity:0.6">Remti orchestrates · never holds funds</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pillars -->
+<section>
+  <div class="shell">
+    <div style="max-width:640px;margin-bottom:40px">
+      <div class="eyebrow">Four pillars</div>
+      <h2 class="h1" style="margin-top:12px">Security, by default.</h2>
+    </div>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
+        </div>
+        <h3>Encryption everywhere</h3>
+        <p>AES-256 at rest, TLS 1.3 in transit. Bank credentials never touch our servers — authorisation stays in your bank's app.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>FCA authorised partner</h3>
+        <p>We work exclusively with FCA-authorised EMIs. Every payment is PSD2-compliant with strong customer authentication.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg>
+        </div>
+        <h3>Every action audited</h3>
+        <p>Immutable log of who did what, when. Exportable for your auditor, retained for 7 years on enterprise plans.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <h3>Approve with 2FA</h3>
+        <p>Every payment above your threshold requires a second factor: your bank's app, TOTP, or hardware key.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l6 6 12-12"/></svg>
+        </div>
+        <h3>Confirmation of Payee</h3>
+        <p>We check account holder names against sort codes before every payment. Misnamed beneficiary? Flagged before send.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6 6L4 4M20 20l-2-2M6 18l-2 2M20 4l-2 2"/><circle cx="12" cy="12" r="4"/></svg>
+        </div>
+        <h3>Your data, your control</h3>
+        <p>Granular permissions by role. Delete your data any time — we honour erasure within 30 days under UK GDPR.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Compliance -->
+<section id="compliance" style="background: var(--bg-elev); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair)">
+  <div class="shell">
+    <div style="text-align:center;max-width:640px;margin:0 auto 40px">
+      <div class="eyebrow">Compliance</div>
+      <h2 class="h1" style="margin-top:12px">Audited. Certified. Renewed.</h2>
+    </div>
+    <div class="certs">
+      <div class="cert">
+        <div class="badge">SOC<br/><span style="font-size:10px">2 · II</span></div>
+        <h4>SOC 2 Type II</h4>
+        <p>Annual audit · Report on request</p>
+      </div>
+      <div class="cert">
+        <div class="badge" style="background:var(--sup-blue)">ISO<br/><span style="font-size:10px">27001</span></div>
+        <h4>ISO 27001</h4>
+        <p>Certified 2024 · BSI</p>
+      </div>
+      <div class="cert">
+        <div class="badge" style="background:var(--sup-forest)">GDPR</div>
+        <h4>UK GDPR &amp; DPA</h4>
+        <p>ICO registered · DPA signed on request</p>
+      </div>
+      <div class="cert">
+        <div class="badge" style="background:var(--sup-red)">PSD2</div>
+        <h4>PSD2 / Open Banking</h4>
+        <p>Strong customer auth · all payments</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section>
+  <div class="shell">
+    <div class="stat-row">
+      <div class="stat"><div class="v num">99.98%</div><div class="l">Uptime last 12 months</div></div>
+      <div class="stat"><div class="v num">0</div><div class="l">Funds lost or delayed</div></div>
+      <div class="stat"><div class="v num">&lt;2m</div><div class="l">Median fraud check time</div></div>
+      <div class="stat"><div class="v num">24/7</div><div class="l">Security on-call</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Feature list -->
+<section style="padding-top:0">
+  <div class="shell">
+    <div style="max-width:640px;margin-bottom:40px">
+      <div class="eyebrow">The small print, in plain English</div>
+      <h2 class="h1" style="margin-top:12px">What's under the hood.</h2>
+    </div>
+
+    <div class="feature-list">
+      <div class="row-item">
+        <div class="ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg></div>
+        <div><h4>Hosted in UK &amp; EU</h4><p>AWS London (eu-west-2) primary, Dublin failover. Data never leaves UK/EU without your consent.</p></div>
+        <span class="pill">AWS</span>
+      </div>
+      <div class="row-item">
+        <div class="ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
+        <div><h4>Point-in-time backups</h4><p>Every 15 minutes, encrypted, retained 90 days. RPO 15 min, RTO 4 hrs.</p></div>
+        <span class="pill">RPO 15m</span>
+      </div>
+      <div class="row-item">
+        <div class="ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 10h16M10 4v16"/></svg></div>
+        <div><h4>Role-based access</h4><p>Admin, Manager, Assistant, Read-only. Scoped by entity, supplier category, or amount.</p></div>
+        <span class="pill">RBAC</span>
+      </div>
+      <div class="row-item">
+        <div class="ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg></div>
+        <div><h4>SSO &amp; SCIM provisioning</h4><p>Okta, Google Workspace, Azure AD. Auto-deprovision on leaver events.</p></div>
+        <span class="pill">Scale plan</span>
+      </div>
+      <div class="row-item">
+        <div class="ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+        <div><h4>Data portability</h4><p>Export every invoice, payment, and approval to CSV, JSON, or PDF. Your data is never locked in.</p></div>
+        <span class="pill">Any time</span>
+      </div>
+      <div class="row-item">
+        <div class="ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 6 1-4.5 4.5L18 20l-6-3-6 3 1.5-6.5L3 9l6-1z"/></svg></div>
+        <div><h4>Vulnerability disclosure</h4><p>Public program. We pay bounties up to £10,000 for responsibly-disclosed issues.</p></div>
+        <a class="pill" href="#">security.txt</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="shell">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="logo" href="index.html" style="margin-bottom:16px"><span class="logo-mark">R</span> Remti</a>
+        <p class="muted" style="font-size:13px;max-width:280px">Supplier payments for UK businesses.</p>
+      </div>
+      <div class="footer-col"><h4>Product</h4><a href="product.html">Overview</a><a href="dashboard.html">Dashboard</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="about.html">About</a></div>
+      <div class="footer-col"><h4>Resources</h4><a href="pricing.html">Pricing</a><a href="security.html">Security</a></div>
+      <div class="footer-col"><h4>Legal</h4><a href="#">Terms</a><a href="#">Privacy</a></div>
+    </div>
+    <div class="footer-bottom"><div>© 2026 Remti Ltd</div><div>Made in London</div></div>
+  </div>
+</footer>
+</body></html>

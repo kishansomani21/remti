@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Log in — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
+  @media (max-width: 860px) { body { grid-template-columns: 1fr; } }
+  .left {
+    padding: 40px 56px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 100vh;
+  }
+  @media (max-width: 860px) { .left { padding: 24px; min-height: auto; } }
+
+  .auth-card { max-width: 420px; width: 100%; margin: auto; }
+  .auth-card h1 { font-size: 32px; letter-spacing: -0.022em; line-height: 1.1; margin: 0; }
+  .auth-card p.sub { color: var(--ink2); margin: 12px 0 32px; font-size: 15px; }
+  .auth-tabs { display: inline-flex; background: var(--bg-elev); padding: 4px; border-radius: var(--r-pill); gap: 2px; margin-bottom: 28px; }
+  .auth-tabs .t { padding: 9px 16px; font-size: 13px; font-weight: 600; color: var(--ink3); border-radius: var(--r-pill); cursor: pointer; }
+  .auth-tabs .t.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+  .field { margin-bottom: 14px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--ink2); letter-spacing: 0.02em; }
+  .field input {
+    margin-top: 6px;
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md);
+    font-size: 15px;
+    color: var(--ink);
+    font-family: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .field input:focus { outline: none; border-color: var(--ink); background: #fff; }
+  .meta-row { display: flex; justify-content: space-between; font-size: 13px; margin: 6px 0 18px; }
+  .meta-row a { color: var(--ink2); text-decoration: underline; text-underline-offset: 3px; }
+  .sso-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+  .sso-btn { padding: 12px; font-size: 14px; font-weight: 500; background: var(--surface); border: 1px solid var(--hair-strong); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--ink); cursor: pointer; transition: background .15s; }
+  .sso-btn:hover { background: var(--bg-elev); }
+  .divider { display: flex; align-items: center; gap: 12px; color: var(--ink3); font-size: 12px; margin: 4px 0; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
+  .tiny { font-size: 12px; color: var(--ink3); margin-top: 20px; text-align: center; }
+
+  /* Right panel */
+  .right {
+    background: var(--ink);
+    color: #fff;
+    padding: 48px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .right::before, .right::after {
+    content: ""; position: absolute; border-radius: 50%; filter: blur(80px); z-index: 0;
+  }
+  .right::before { width: 480px; height: 480px; background: rgba(176,74,29,0.35); top: -160px; right: -120px; }
+  .right::after { width: 320px; height: 320px; background: rgba(43,91,215,0.25); bottom: -80px; left: -100px; }
+  .right > * { position: relative; z-index: 1; }
+  @media (max-width: 860px) { .right { display: none; } }
+
+  .quote {
+    font-size: 28px; letter-spacing: -0.02em; line-height: 1.25; font-weight: 500; max-width: 480px;
+  }
+  .auth-preview {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--r-lg);
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    max-width: 360px;
+  }
+  .auth-preview h4 { font-size: 13px; letter-spacing: 0.06em; font-weight: 700; color: rgba(255,255,255,0.55); margin: 0 0 12px; }
+  .auth-preview-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .auth-preview-row:last-child { border: 0; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<section class="left">
+  <a class="logo" href="index.html"><span class="logo-mark">R</span> Remti</a>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <span class="t active" data-mode="login">Log in</span>
+      <span class="t" data-mode="signup">Create account</span>
+    </div>
+    <h1 id="auth-title">Welcome back.</h1>
+    <p class="sub" id="auth-sub">Pick up where you left off. Your next supplier run is waiting.</p>
+
+    <div class="sso-row">
+      <button class="sso-btn">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.3 2.5 30 .5 24 .5 14.6.5 6.5 5.8 2.5 13.4l7.7 6C12.2 13.6 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.5 3-2.3 5.5-4.8 7.2l7.3 5.7c4.3-4 6.8-9.9 6.8-17.2z"/><path fill="#FBBC05" d="M10.2 28.6c-.6-1.8-1-3.7-1-5.6s.4-3.8 1-5.6l-7.7-6C.9 15.1 0 19 0 23s.9 7.9 2.5 11.4l7.7-5.8z"/><path fill="#34A853" d="M24 47.5c6 0 11.3-2 15.1-5.5l-7.3-5.7c-2 1.3-4.6 2.1-7.8 2.1-6.4 0-11.8-4.1-13.8-9.8l-7.7 5.8C6.5 42.2 14.6 47.5 24 47.5z"/></svg>
+        Google
+      </button>
+      <button class="sso-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16.365 1.43c0 1.14-.47 2.23-1.24 3.02-.84.88-2.24 1.54-3.42 1.46-.14-1.14.45-2.31 1.23-3.06.85-.87 2.3-1.5 3.43-1.42zM20.4 17.5c-.55 1.28-.82 1.85-1.54 2.98-.99 1.57-2.4 3.54-4.13 3.55-1.55.02-1.94-1.01-4.05-1-2.1.01-2.54 1.02-4.09 1-1.73-.02-3.07-1.78-4.07-3.36-2.78-4.41-3.07-9.58-1.36-12.33 1.22-1.96 3.15-3.1 4.96-3.1 1.85 0 3 1 4.53 1 1.48 0 2.38-1 4.52-1 1.62 0 3.33.88 4.56 2.41-4.01 2.2-3.36 7.91-1.33 9.85z"/></svg>
+        Apple
+      </button>
+    </div>
+    <div class="divider">or with email</div>
+
+    <form id="auth-form" onsubmit="event.preventDefault(); window.location.href='dashboard.html'">
+      <div class="field" id="name-field" style="display:none">
+        <label>Full name</label>
+        <input type="text" placeholder="Jordan Morgan"/>
+      </div>
+      <div class="field">
+        <label>Work email</label>
+        <input type="email" placeholder="jordan@yourcompany.co.uk" value="jordan@harbert.co.uk" required/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••••" value="••••••••••" required/>
+      </div>
+      <div class="meta-row" id="login-meta">
+        <label style="display:flex;gap:8px;align-items:center;color:var(--ink2)"><input type="checkbox" checked style="accent-color:var(--ink)"/> Keep me signed in</label>
+        <a href="#">Forgot password</a>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px" id="auth-submit">Log in →</button>
+    </form>
+
+    <p class="tiny">By continuing you agree to our <a href="#" style="text-decoration:underline">Terms</a> &amp; <a href="#" style="text-decoration:underline">Privacy</a>.</p>
+  </div>
+
+  <div style="color:var(--ink3);font-size:12px;text-align:center">© 2026 Remti Ltd · Made in London</div>
+</section>
+
+<aside class="right">
+  <div>
+    <div class="eyebrow" style="color:rgba(255,255,255,0.55);margin-bottom:20px">Live · April 20</div>
+    <div class="quote">"15 minutes to pay 27 suppliers. It used to be an afternoon."</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:24px">
+      <div class="avatar avatar-lg" style="background:rgba(255,255,255,0.18)">DH</div>
+      <div>
+        <div style="font-weight:600">Daniel Harbert</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.55)">FD · Harbert &amp; Co, Sheffield</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-preview">
+    <h4>THIS WEEK ON REMTI</h4>
+    <div class="auth-preview-row"><span>Invoices paid</span><span>41</span></div>
+    <div class="auth-preview-row"><span>Suppliers settled</span><span>27</span></div>
+    <div class="auth-preview-row"><span>Avg. time to pay</span><span>2.4 days</span></div>
+    <div class="auth-preview-row"><span>Total sent</span><span>£184,620</span></div>
+  </div>
+</aside>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  function setMode(m){
+    document.querySelectorAll('.auth-tabs .t').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+    document.getElementById('name-field').style.display = m === 'signup' ? '' : 'none';
+    document.getElementById('login-meta').style.display = m === 'signup' ? 'none' : '';
+    document.getElementById('auth-title').textContent = m === 'signup' ? 'Start paying suppliers.' : 'Welcome back.';
+    document.getElementById('auth-sub').textContent = m === 'signup' ? '14 days free. No card. Your bank, your money.' : 'Pick up where you left off. Your next supplier run is waiting.';
+    document.getElementById('auth-submit').textContent = m === 'signup' ? 'Create account →' : 'Log in →';
+  }
+  if (params.get('signup')) setMode('signup');
+  document.querySelectorAll('.auth-tabs .t').forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
+</script>
+</body></html>
