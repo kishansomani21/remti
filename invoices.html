@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Invoices — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+
+  .main { padding: 32px 40px; flex: 1; min-width: 0; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .topbar-actions { display: flex; gap: 10px; }
+
+  /* Filter tabs */
+  .filter-tabs {
+    display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .filter-tab {
+    padding: 7px 14px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600;
+    background: transparent; color: var(--ink2); border: 1px solid var(--hair);
+    cursor: pointer; transition: all .15s ease;
+  }
+  .filter-tab:hover { background: var(--surface); color: var(--ink); }
+  .filter-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .filter-tab .tab-count {
+    font-size: 11px; font-weight: 700; margin-left: 4px; opacity: 0.7;
+  }
+  .filter-tab.active .tab-count { opacity: 0.85; }
+
+  /* Search */
+  .search-bar {
+    margin-bottom: 20px; position: relative;
+  }
+  .search-bar input {
+    width: 100%; padding: 11px 16px 11px 40px; border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md); font-size: 14px; background: var(--surface);
+    color: var(--ink); outline: none; font-family: inherit;
+  }
+  .search-bar input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(26,26,26,0.06); }
+  .search-bar input::placeholder { color: var(--ink4); }
+  .search-bar .search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--ink3); font-size: 14px; pointer-events: none;
+  }
+
+  /* Select toggle */
+  .select-toggle {
+    font-size: 13px; font-weight: 600; color: var(--ink2); cursor: pointer;
+    padding: 6px 12px; border-radius: var(--r-sm); border: 1px solid var(--hair);
+    background: var(--surface);
+  }
+  .select-toggle:hover { color: var(--ink); background: var(--bg-elev); }
+  .select-toggle.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* Table */
+  .inv-table-wrap {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .inv-table {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+  }
+  .inv-table th {
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink3); padding: 14px 16px;
+    border-bottom: 1px solid var(--hair); background: var(--surface);
+    white-space: nowrap;
+  }
+  .inv-table th.col-cb { width: 44px; text-align: center; }
+  .inv-table th.col-supplier { width: 22%; }
+  .inv-table th.col-number { width: 12%; }
+  .inv-table th.col-desc { width: 22%; }
+  .inv-table th.col-amount { width: 12%; text-align: right; }
+  .inv-table th.col-due { width: 12%; }
+  .inv-table th.col-status { width: 10%; }
+  .inv-table th.col-action { width: 10%; text-align: right; }
+
+  .inv-table td {
+    padding: 14px 16px; border-bottom: 1px solid var(--hair);
+    font-size: 14px; vertical-align: middle;
+  }
+  .inv-table tbody tr { cursor: pointer; transition: background .1s; }
+  .inv-table tbody tr:hover { background: rgba(26,26,26,0.02); }
+  .inv-table tbody tr:last-child td { border-bottom: 0; }
+  .inv-table tbody tr.row-overdue { background: rgba(162,48,48,0.03); }
+  .inv-table tbody tr.row-overdue:hover { background: rgba(162,48,48,0.06); }
+
+  .inv-table td.col-cb { text-align: center; }
+  .inv-table td.col-cb input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--ink); cursor: pointer;
+  }
+
+  .supplier-cell { display: flex; align-items: center; gap: 10px; }
+  .supplier-cell .avatar { width: 32px; height: 32px; font-size: 13px; flex-shrink: 0; }
+  .supplier-cell .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .desc-cell .desc-main { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .desc-cell .desc-cat { font-size: 12px; color: var(--ink3); }
+
+  .amount-cell { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  .due-cell { white-space: nowrap; }
+  .due-cell .overdue-days { font-size: 11px; font-weight: 600; color: var(--danger); display: block; }
+
+  /* Action buttons */
+  .action-cell { text-align: right; white-space: nowrap; }
+  .btn-sm {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    line-height: 1; transition: all .12s ease; white-space: nowrap;
+  }
+  .btn-sm.btn-primary { background: var(--ink); color: #fff; }
+  .btn-sm.btn-primary:hover { background: #000; }
+  .btn-sm.btn-secondary { background: var(--surface); border: 1px solid var(--hair-strong); color: var(--ink); }
+  .btn-sm.btn-secondary:hover { background: var(--bg-elev); }
+  .btn-sm.btn-paid { color: var(--positive); cursor: default; opacity: 0.7; background: none; }
+  .btn-sm.btn-draft { background: var(--surface-alt); color: var(--ink2); border: 1px solid var(--hair); }
+  .btn-sm.btn-draft:hover { background: var(--bg-elev); }
+  .btn-sm.btn-schedule { background: var(--surface); border: 1px solid rgba(43,91,215,0.3); color: var(--sup-blue); }
+  .btn-sm.btn-schedule:hover { background: rgba(43,91,215,0.06); }
+
+  /* Bulk bar */
+  .bulk-bar {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 14px 24px; border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lift); display: none; align-items: center; gap: 16px;
+    font-size: 14px; font-weight: 600; z-index: 100;
+  }
+  .bulk-bar.visible { display: flex; }
+  .bulk-bar .bulk-info { font-variant-numeric: tabular-nums; opacity: 0.85; }
+  .bulk-bar .bulk-total { font-variant-numeric: tabular-nums; }
+  .bulk-bar .btn-pay-selected {
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    background: #fff; color: var(--ink); cursor: pointer; border: 0;
+  }
+  .bulk-bar .btn-pay-selected:hover { background: #eee; }
+  .bulk-bar .btn-clear {
+    padding: 8px 12px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer;
+    background: none; border: 0;
+  }
+  .bulk-bar .btn-clear:hover { color: #fff; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 48px; text-align: center; color: var(--ink3); font-size: 14px;
+  }
+
+  /* Checkbox column visibility */
+  .col-cb { display: none; }
+  .select-mode .col-cb { display: table-cell; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link active" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h1>Invoices</h1>
+      <div class="topbar-actions">
+        <button class="select-toggle" id="selectToggle" onclick="toggleSelectMode()">Select</button>
+        <a href="#" class="btn btn-secondary" style="font-size:13px;padding:8px 14px">Scan invoice</a>
+        <a href="#" class="btn btn-primary" style="font-size:13px;padding:8px 14px">Upload CSV</a>
+      </div>
+    </div>
+
+    <div class="filter-tabs" id="filterTabs"></div>
+
+    <div class="search-bar">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" id="searchInput" placeholder="Search by supplier, invoice number, or description..." oninput="renderTable()"/>
+    </div>
+
+    <div class="inv-table-wrap" id="tableWrap">
+      <table class="inv-table" id="invTable">
+        <thead>
+          <tr>
+            <th class="col-cb"><input type="checkbox" id="selectAll" onchange="toggleAll(this.checked)"/></th>
+            <th class="col-supplier">Supplier</th>
+            <th class="col-number">Invoice #</th>
+            <th class="col-desc">Description</th>
+            <th class="col-amount">Amount</th>
+            <th class="col-due">Due date</th>
+            <th class="col-status">Status</th>
+            <th class="col-action">Action</th>
+          </tr>
+        </thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+      <span class="bulk-info" id="bulkInfo"></span>
+      <span class="bulk-total" id="bulkTotal"></span>
+      <a href="/payrun" class="btn-pay-selected">Pay selected</a>
+      <button class="btn-clear" onclick="clearSelection()">Clear</button>
+    </div>
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script>
+  function logout() { window.location.href = '/login'; }
+
+  let activeFilter = 'all';
+  let selectMode = false;
+  const selected = new Set();
+
+  // Status mapping
+  function statusGroup(s) {
+    if (s === 'overdue') return 'overdue';
+    if (s === 'due') return 'pending';
+    if (s === 'processing') return 'approved';
+    if (s === 'paid') return 'paid';
+    if (s === 'draft') return 'draft';
+    return 'all';
+  }
+
+  // Counts
+  function getCounts() {
+    const c = { all: 0, pending: 0, overdue: 0, approved: 0, paid: 0, draft: 0 };
+    DATA.invoices.forEach(inv => {
+      c.all++;
+      const g = statusGroup(inv.status);
+      if (c[g] !== undefined) c[g]++;
+    });
+    return c;
+  }
+
+  // Render filter tabs
+  function renderFilters() {
+    const counts = getCounts();
+    const tabs = [
+      { key: 'all', label: 'All' },
+      { key: 'pending', label: 'Pending' },
+      { key: 'overdue', label: 'Overdue' },
+      { key: 'approved', label: 'Approved' },
+      { key: 'paid', label: 'Paid' },
+      { key: 'draft', label: 'Draft' },
+    ];
+    document.getElementById('filterTabs').innerHTML = tabs.map(t =>
+      `<button class="filter-tab${activeFilter === t.key ? ' active' : ''}" onclick="setFilter('${t.key}')">${t.label}<span class="tab-count">${counts[t.key]}</span></button>`
+    ).join('');
+  }
+
+  function setFilter(f) {
+    activeFilter = f;
+    renderFilters();
+    renderTable();
+  }
+
+  // Status pill
+  function statusPill(s) {
+    if (s === 'overdue') return '<span class="pill pill-danger pill-dot">Overdue</span>';
+    if (s === 'due') return '<span class="pill pill-dot">Due</span>';
+    if (s === 'paid') return '<span class="pill pill-positive pill-dot">Paid</span>';
+    if (s === 'draft') return '<span class="pill">Draft</span>';
+    if (s === 'processing') return '<span class="pill pill-dot" style="background:rgba(43,91,215,0.08);color:var(--sup-blue);border-color:rgba(43,91,215,0.18)">Processing</span>';
+    return '<span class="pill">' + s + '</span>';
+  }
+
+  // Action button
+  function actionBtn(inv) {
+    if (inv.status === 'overdue') return `<a href="/payrun" class="btn-sm btn-primary" onclick="event.stopPropagation()">Pay now</a>`;
+    if (inv.status === 'due') return `<a href="/invoice-detail?id=${inv.id}" class="btn-sm btn-secondary" onclick="event.stopPropagation()">Review</a>`;
+    if (inv.status === 'processing') return `<span class="btn-sm btn-schedule">Schedule</span>`;
+    if (inv.status === 'paid') return `<span class="btn-sm btn-paid">&#10003; Paid</span>`;
+    if (inv.status === 'draft') return `<a href="/invoice-detail?id=${inv.id}" class="btn-sm btn-draft" onclick="event.stopPropagation()">Edit</a>`;
+    return '';
+  }
+
+  // Format due date
+  function fmtDue(inv) {
+    let html = `<span>${inv.due} 2026</span>`;
+    if (inv.status === 'overdue' && inv.daysUntilDue != null) {
+      html += `<span class="overdue-days">${Math.abs(inv.daysUntilDue)} days overdue</span>`;
+    }
+    return html;
+  }
+
+  // Description line
+  function descLine(inv) {
+    const descs = inv.lineItems && inv.lineItems.length > 0 ? inv.lineItems[0].desc : '';
+    return `<span class="desc-main">${descs}</span><span class="desc-cat">${inv.category}</span>`;
+  }
+
+  // Render table
+  function renderTable() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    let invoices = DATA.invoices;
+
+    // Filter by tab
+    if (activeFilter !== 'all') {
+      invoices = invoices.filter(inv => statusGroup(inv.status) === activeFilter);
+    }
+
+    // Filter by search
+    if (query) {
+      invoices = invoices.filter(inv =>
+        inv.supplierName.toLowerCase().includes(query) ||
+        inv.number.toLowerCase().includes(query) ||
+        (inv.lineItems && inv.lineItems.some(li => li.desc.toLowerCase().includes(query))) ||
+        inv.category.toLowerCase().includes(query)
+      );
+    }
+
+    const tbody = document.getElementById('invBody');
+    if (invoices.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No invoices found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = invoices.map(inv => {
+      const isOverdue = inv.status === 'overdue';
+      const checked = selected.has(inv.id);
+      return `<tr class="${isOverdue ? 'row-overdue' : ''}" onclick="goToInvoice('${inv.id}')">
+        <td class="col-cb"><input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelect('${inv.id}', ${inv.amount})" /></td>
+        <td><div class="supplier-cell"><div class="avatar" style="background:${inv.supplierColor}">${inv.supplierInitial}</div><span class="name">${inv.supplierName}</span></div></td>
+        <td style="font-weight:500;color:var(--ink2)">${inv.number}</td>
+        <td><div class="desc-cell">${descLine(inv)}</div></td>
+        <td class="amount-cell">${fmt(inv.amount)}</td>
+        <td class="due-cell">${fmtDue(inv)}</td>
+        <td>${statusPill(inv.status)}</td>
+        <td class="action-cell">${actionBtn(inv)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Navigation
+  function goToInvoice(id) {
+    window.location.href = `/invoice-detail?id=${id}`;
+  }
+
+  // Select mode
+  function toggleSelectMode() {
+    selectMode = !selectMode;
+    const tbl = document.getElementById('invTable');
+    const btn = document.getElementById('selectToggle');
+    if (selectMode) {
+      tbl.classList.add('select-mode');
+      btn.classList.add('active');
+      btn.textContent = 'Cancel';
+    } else {
+      tbl.classList.remove('select-mode');
+      btn.classList.remove('active');
+      btn.textContent = 'Select';
+      clearSelection();
+    }
+  }
+
+  function toggleSelect(id, amount) {
+    if (selected.has(id)) {
+      selected.delete(id);
+    } else {
+      selected.add(id);
+    }
+    updateBulkBar();
+  }
+
+  function toggleAll(checked) {
+    const visible = getVisibleInvoices();
+    if (checked) {
+      visible.forEach(inv => selected.add(inv.id));
+    } else {
+      visible.forEach(inv => selected.delete(inv.id));
+    }
+    renderTable();
+    updateBulkBar();
+  }
+
+  function getVisibleInvoices() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    let invoices = DATA.invoices;
+    if (activeFilter !== 'all') invoices = invoices.filter(inv => statusGroup(inv.status) === activeFilter);
+    if (query) invoices = invoices.filter(inv =>
+      inv.supplierName.toLowerCase().includes(query) || inv.number.toLowerCase().includes(query)
+    );
+    return invoices;
+  }
+
+  function clearSelection() {
+    selected.clear();
+    renderTable();
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    if (selected.size === 0) {
+      bar.classList.remove('visible');
+      return;
+    }
+    bar.classList.add('visible');
+    let total = 0;
+    DATA.invoices.forEach(inv => { if (selected.has(inv.id)) total += inv.amount; });
+    document.getElementById('bulkInfo').textContent = `${selected.size} selected`;
+    document.getElementById('bulkTotal').textContent = fmt(total);
+  }
+
+  // Init
+  renderFilters();
+  renderTable();
+</script>
+</body>
+</html>

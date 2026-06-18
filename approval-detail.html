@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Approval Detail — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+
+  .main { padding: 32px 40px; max-width: 1280px; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+
+  /* Back link */
+  .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink3); font-weight: 500; margin-bottom: 20px; transition: color 0.15s; }
+  .back-link:hover { color: var(--ink); }
+
+  /* Header */
+  .detail-header {
+    display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+  }
+  .detail-header-left { display: flex; align-items: center; gap: 16px; }
+  .detail-header-left .dh-info h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0; }
+  .detail-header-left .dh-sub { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .detail-header-left .dh-sub .inv-num { font-size: 14px; color: var(--ink2); font-weight: 500; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* Two-column layout */
+  .detail-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 1060px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  /* Panels */
+  .panel {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .panel-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--hair);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel-head h3 { font-size: 14px; font-weight: 700; margin: 0; }
+  .panel-head .ph-sub { font-size: 12px; color: var(--ink3); }
+  .panel-body { padding: 20px; }
+
+  /* Urgent banner */
+  .urgent-banner {
+    background: linear-gradient(135deg, rgba(162,48,48,0.06) 0%, rgba(162,48,48,0.03) 100%);
+    border: 1px solid rgba(162,48,48,0.15); border-radius: var(--r-md);
+    padding: 12px 16px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600; color: var(--danger);
+  }
+  .urgent-banner .ub-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Meta grid */
+  .meta-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    background: var(--hair); border: 1px solid var(--hair); border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .meta-grid .mg-cell { background: var(--surface); padding: 14px 18px; }
+  .meta-grid .mg-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+  .meta-grid .mg-value { font-size: 14px; font-weight: 600; }
+
+  /* Line items table */
+  .line-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .line-table th {
+    text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3);
+    border-bottom: 1px solid var(--hair); background: var(--bg);
+  }
+  .line-table th:last-child, .line-table td:last-child { text-align: right; }
+  .line-table th:nth-child(2), .line-table td:nth-child(2) { text-align: center; }
+  .line-table th:nth-child(3), .line-table td:nth-child(3) { text-align: right; }
+  .line-table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--hair); }
+  .line-table tbody tr:last-child td { border-bottom: none; }
+
+  /* Totals */
+  .totals-section {
+    border-top: 1px solid var(--hair); padding: 16px 16px 8px;
+    display: flex; flex-direction: column; align-items: flex-end;
+  }
+  .totals-row { display: flex; gap: 40px; padding: 4px 0; font-size: 14px; }
+  .totals-row .tl { color: var(--ink3); min-width: 80px; }
+  .totals-row .tv { font-weight: 600; font-variant-numeric: tabular-nums; min-width: 100px; text-align: right; }
+  .totals-row.total-final { font-size: 16px; padding-top: 8px; border-top: 1px solid var(--hair); margin-top: 4px; }
+  .totals-row.total-final .tl { color: var(--ink); font-weight: 600; }
+  .totals-row.total-final .tv { font-weight: 700; }
+
+  /* Approval chain */
+  .chain { display: flex; align-items: center; gap: 0; padding: 0 8px; }
+  .chain-step { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; text-align: center; position: relative; }
+  .chain-dot {
+    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0; z-index: 1;
+  }
+  .chain-dot.done { background: var(--positive-soft); color: var(--positive); }
+  .chain-dot.current { background: var(--ink); color: #fff; box-shadow: 0 0 0 4px rgba(26,26,26,0.1); }
+  .chain-dot.pending { background: var(--surface-alt); border: 2px dashed var(--hair-strong); color: var(--ink4); }
+  .chain-dot.rejected { background: var(--danger-soft); color: var(--danger); }
+  .chain-label { font-size: 11px; font-weight: 600; color: var(--ink2); }
+  .chain-sub { font-size: 10px; color: var(--ink3); }
+  .chain-line { flex: 0 0 auto; width: 40px; height: 2px; background: var(--hair); margin-bottom: 26px; }
+  .chain-line.done { background: var(--positive); }
+
+  /* Discussion thread */
+  .thread { list-style: none; margin: 0; padding: 0; }
+  .thread-item { padding: 14px 0; border-bottom: 1px solid var(--hair); }
+  .thread-item:last-child { border-bottom: none; }
+  .ti-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .ti-head .ti-name { font-size: 13px; font-weight: 600; }
+  .ti-head .ti-time { font-size: 11px; color: var(--ink3); margin-left: auto; }
+  .ti-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--r-pill);
+    letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .ti-badge.submitted { background: rgba(43,91,215,0.1); color: #2B5BD7; }
+  .ti-badge.note { background: var(--surface-alt); color: var(--ink3); }
+  .ti-badge.approved { background: var(--positive-soft); color: var(--positive); }
+  .ti-badge.rejected { background: var(--danger-soft); color: var(--danger); }
+  .ti-badge.revised { background: rgba(178,90,28,0.1); color: var(--warn); }
+  .ti-badge.paid { background: var(--positive-soft); color: var(--positive); }
+  .ti-body { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+  .ti-revision {
+    margin-top: 8px; padding: 10px 14px; background: rgba(178,90,28,0.06);
+    border: 1px solid rgba(178,90,28,0.15); border-radius: var(--r-sm);
+    font-size: 13px; color: var(--warn); font-weight: 500;
+  }
+
+  /* Comment form */
+  .comment-form { padding: 16px 20px; border-top: 1px solid var(--hair); }
+  .comment-form textarea {
+    width: 100%; min-height: 72px; padding: 10px 14px; border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md); background: var(--bg); font-size: 13px; font-family: inherit;
+    color: var(--ink); resize: vertical;
+  }
+  .comment-form textarea:focus { outline: 2px solid var(--ink); outline-offset: -1px; border-color: transparent; }
+  .comment-form .cf-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+  /* Supplier card */
+  .supplier-card-info { display: flex; flex-direction: column; gap: 10px; }
+  .sci-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .sci-row .sci-label { color: var(--ink3); }
+  .sci-row .sci-value { font-weight: 500; text-align: right; }
+
+  /* Reject modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--surface); border-radius: var(--r-xl); padding: 28px;
+    width: 100%; max-width: 440px; box-shadow: var(--shadow-lift);
+  }
+  .modal h3 { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+  .modal .modal-sub { font-size: 13px; color: var(--ink3); margin-bottom: 16px; }
+  .modal textarea {
+    width: 100%; min-height: 100px; padding: 12px 14px; border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md); background: var(--bg); font-size: 14px; font-family: inherit;
+    color: var(--ink); resize: vertical;
+  }
+  .modal textarea:focus { outline: 2px solid var(--ink); outline-offset: -1px; border-color: transparent; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: #fff; padding: 12px 24px; border-radius: var(--r-pill);
+    font-size: 14px; font-weight: 600; z-index: 200; box-shadow: var(--shadow-lift);
+    opacity: 0; transition: all 0.3s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .btn-approve { background: var(--positive); color: #fff; }
+  .btn-approve:hover { background: #256333; }
+  .btn-reject { background: var(--danger); color: #fff; }
+  .btn-reject:hover { background: #8a2828; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link active" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <h3>Reject approval</h3>
+    <div class="modal-sub">Provide a reason for rejecting this invoice.</div>
+    <textarea id="rejectReason" placeholder="Enter rejection reason..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+      <button class="btn btn-reject" onclick="confirmReject()">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+function logout() { window.location.href = '/login'; }
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+var currentApproval = null;
+
+function openRejectModal() {
+  document.getElementById('rejectModal').classList.add('active');
+  document.getElementById('rejectReason').value = '';
+  document.getElementById('rejectReason').focus();
+}
+function closeRejectModal() {
+  document.getElementById('rejectModal').classList.remove('active');
+}
+function confirmReject() {
+  var reason = document.getElementById('rejectReason').value.trim();
+  if (!reason) { document.getElementById('rejectReason').style.borderColor = 'var(--danger)'; return; }
+  if (currentApproval) {
+    currentApproval.status = 'rejected';
+    currentApproval.thread.push({
+      time: 'Just now',
+      kind: 'rejected',
+      who: 'Jordan Morgan',
+      body: reason
+    });
+  }
+  closeRejectModal();
+  showToast('Approval rejected');
+  renderDetail();
+}
+
+function approveItem() {
+  if (currentApproval) {
+    currentApproval.status = 'approved';
+    currentApproval.approvedBy = 'Jordan Morgan';
+    currentApproval.approvedAt = 'Just now';
+    currentApproval.thread.push({
+      time: 'Just now',
+      kind: 'approved',
+      who: 'Jordan Morgan',
+      body: 'Approved.'
+    });
+  }
+  showToast('Invoice approved successfully');
+  renderDetail();
+}
+
+function addComment() {
+  var ta = document.getElementById('commentBox');
+  var text = ta.value.trim();
+  if (!text || !currentApproval) return;
+  currentApproval.thread.push({
+    time: 'Just now',
+    kind: 'note',
+    who: 'Jordan Morgan',
+    body: text
+  });
+  ta.value = '';
+  renderDetail();
+}
+
+function renderDetail() {
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id') || 'apr-001';
+  var a = DATA.approvals.find(function(x) { return x.id === id; });
+  if (!a) { document.getElementById('main').innerHTML = '<p>Approval not found.</p>'; return; }
+  currentApproval = a;
+
+  var supplier = DATA.suppliers.find(function(s) { return s.id === a.supplierId; });
+  var isPending = a.status === 'pending';
+  var statusPill = a.status === 'pending' ? 'pill-warn' : a.status === 'approved' ? 'pill-positive' : a.status === 'rejected' ? 'pill-danger' : 'pill-positive';
+  var statusText = a.status === 'paid' ? '&#10003; Paid' : a.status.charAt(0).toUpperCase() + a.status.slice(1);
+
+  // Chain steps
+  var steps = [
+    { label: 'Submitted', sub: a.submittedBy, status: 'done' },
+    { label: 'Review', sub: isPending ? 'Awaiting review' : (a.approvedBy || 'Reviewed'), status: isPending ? 'current' : 'done' },
+    { label: a.status === 'rejected' ? 'Rejected' : 'Approved', sub: a.status === 'rejected' ? 'Changes requested' : (a.approvedBy || ''), status: a.status === 'pending' ? 'pending' : a.status === 'rejected' ? 'rejected' : 'done' },
+    { label: 'Payment', sub: a.status === 'paid' ? 'Completed' : 'Pending', status: a.status === 'paid' ? 'done' : 'pending' }
+  ];
+
+  var html = '<a href="/approvals" class="back-link">&#8592; Back to approvals</a>' +
+
+    '<div class="detail-header">' +
+      '<div class="detail-header-left">' +
+        '<div class="avatar avatar-xl" style="background:' + a.supplierColor + '">' + a.supplierInitial + '</div>' +
+        '<div class="dh-info">' +
+          '<h1>' + a.supplierName + '</h1>' +
+          '<div class="dh-sub">' +
+            '<span class="inv-num">' + a.invoiceNumber + '</span>' +
+            '<span class="pill pill-dot ' + statusPill + '">' + statusText + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="header-actions">' +
+        (isPending ? '<button class="btn btn-approve" onclick="approveItem()">Approve</button><button class="btn btn-reject" onclick="openRejectModal()">Reject</button>' : '') +
+        (a.status === 'approved' ? '<a href="/payrun" class="btn btn-primary">Schedule payment</a>' : '') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="detail-grid">' +
+      '<div class="left-col">' +
+
+        // Invoice details panel
+        '<div class="panel">' +
+          '<div class="panel-head"><h3>Invoice details</h3></div>' +
+          '<div class="panel-body">' +
+            (a.urgent ? '<div class="urgent-banner"><div class="ub-dot"></div>URGENT -- Requires immediate attention</div>' : '') +
+            '<div class="meta-grid">' +
+              '<div class="mg-cell"><div class="mg-label">Invoice #</div><div class="mg-value">' + a.invoiceNumber + '</div></div>' +
+              '<div class="mg-cell"><div class="mg-label">Amount</div><div class="mg-value">' + fmt(a.amount) + '</div></div>' +
+              '<div class="mg-cell"><div class="mg-label">Due date</div><div class="mg-value">' + a.due + '</div></div>' +
+              '<div class="mg-cell"><div class="mg-label">Category</div><div class="mg-value">' + a.category + '</div></div>' +
+              '<div class="mg-cell"><div class="mg-label">Submitted by</div><div class="mg-value">' + a.submittedBy + '</div></div>' +
+              '<div class="mg-cell"><div class="mg-label">Submitted at</div><div class="mg-value">' + a.submittedAt + '</div></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // Line items panel
+        '<div class="panel">' +
+          '<div class="panel-head"><h3>Line items</h3><span class="ph-sub">' + a.lineItems.length + ' items</span></div>' +
+          '<table class="line-table"><thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Total</th></tr></thead><tbody>' +
+          a.lineItems.map(function(li) {
+            return '<tr><td>' + li.desc + '</td><td>' + li.qty + '</td><td>' + fmt(li.unit) + '</td><td>' + fmt(li.qty * li.unit) + '</td></tr>';
+          }).join('') +
+          '</tbody></table>' +
+          '<div class="totals-section">' +
+            '<div class="totals-row"><span class="tl">Subtotal</span><span class="tv">' + fmt(a.subtotal) + '</span></div>' +
+            '<div class="totals-row"><span class="tl">Tax (20%)</span><span class="tv">' + fmt(a.tax) + '</span></div>' +
+            '<div class="totals-row total-final"><span class="tl">Total</span><span class="tv">' + fmt(a.subtotal + a.tax) + '</span></div>' +
+          '</div>' +
+        '</div>' +
+
+        // Approval chain panel
+        '<div class="panel">' +
+          '<div class="panel-head"><h3>Approval chain</h3></div>' +
+          '<div class="panel-body">' +
+            '<div class="chain">' +
+              steps.map(function(s, i) {
+                var dotClass = s.status;
+                var icon = s.status === 'done' ? '&#10003;' : s.status === 'current' ? '&#8226;' : s.status === 'rejected' ? '&#10005;' : '';
+                var lineClass = (i < steps.length - 1) ? (steps[i+1].status === 'done' || steps[i+1].status === 'rejected' || steps[i+1].status === 'current' ? 'done' : '') : '';
+                var result = '<div class="chain-step"><div class="chain-dot ' + dotClass + '">' + icon + '</div><div class="chain-label">' + s.label + '</div><div class="chain-sub">' + s.sub + '</div></div>';
+                if (i < steps.length - 1) result += '<div class="chain-line ' + lineClass + '"></div>';
+                return result;
+              }).join('') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+      '</div>' + // end left-col
+
+      '<div class="right-col">' +
+
+        // Discussion thread panel
+        '<div class="panel">' +
+          '<div class="panel-head"><h3>Discussion</h3><span class="ph-sub">' + a.thread.length + ' comments</span></div>' +
+          '<div class="panel-body" style="padding:0 20px">' +
+            '<ul class="thread">' +
+              a.thread.map(function(t) {
+                var initials = t.who.split(' ').map(function(w) { return w[0]; }).join('');
+                var teamMember = DATA.team.find(function(tm) { return tm.name === t.who; });
+                var avatarColor = teamMember ? teamMember.color : 'var(--ink3)';
+                return '<li class="thread-item">' +
+                  '<div class="ti-head">' +
+                    '<div class="avatar avatar-sm" style="background:' + avatarColor + '">' + initials + '</div>' +
+                    '<span class="ti-name">' + t.who + '</span>' +
+                    '<span class="ti-badge ' + t.kind + '">' + t.kind + '</span>' +
+                    '<span class="ti-time">' + t.time + '</span>' +
+                  '</div>' +
+                  (t.body ? '<div class="ti-body">' + t.body + '</div>' : '') +
+                  (t.kind === 'revised' && t.revision ? '<div class="ti-revision">' + t.revision + '</div>' : '') +
+                '</li>';
+              }).join('') +
+            '</ul>' +
+          '</div>' +
+          '<div class="comment-form">' +
+            '<textarea id="commentBox" placeholder="Add a note..."></textarea>' +
+            '<div class="cf-actions"><button class="btn btn-primary" onclick="addComment()" style="font-size:13px;padding:8px 16px">Add note</button></div>' +
+          '</div>' +
+        '</div>' +
+
+        // Supplier info card
+        (supplier ? '<div class="panel">' +
+          '<div class="panel-head"><h3>Supplier</h3></div>' +
+          '<div class="panel-body">' +
+            '<div class="supplier-card-info">' +
+              '<div class="sci-row"><span class="sci-label">Name</span><span class="sci-value">' + supplier.name + '</span></div>' +
+              '<div class="sci-row"><span class="sci-label">Category</span><span class="sci-value">' + supplier.category + '</span></div>' +
+              '<div class="sci-row"><span class="sci-label">Email</span><span class="sci-value">' + supplier.email + '</span></div>' +
+              '<div class="sci-row"><span class="sci-label">Phone</span><span class="sci-value">' + supplier.phone + '</span></div>' +
+              '<div style="margin-top:6px"><a href="/supplier-detail?id=' + supplier.id + '" style="font-size:13px;font-weight:600;color:var(--ink2)">View supplier &#8594;</a></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' : '') +
+
+      '</div>' + // end right-col
+    '</div>'; // end detail-grid
+
+  document.getElementById('main').innerHTML = html;
+}
+
+renderDetail();
+</script>
+</body>
+</html>

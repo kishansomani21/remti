@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Product — Remti</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  .page-head { padding: 72px 0 32px; }
+  .page-head h1 { font-size: clamp(44px, 6vw, 72px); letter-spacing: -0.03em; line-height: 1.02; }
+  .page-head p.lead { font-size: 19px; color: var(--ink2); max-width: 640px; margin-top: 20px; }
+
+  .section-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  }
+  .section-split.reverse { direction: rtl; }
+  .section-split.reverse > * { direction: ltr; }
+  @media (max-width: 980px) { .section-split { grid-template-columns: 1fr; gap: 40px; } .section-split.reverse { direction: ltr; } }
+
+  .feature-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sup-red); margin-bottom: 16px; }
+  .bullet-list { list-style: none; padding: 0; margin: 24px 0 0; }
+  .bullet-list li { padding: 10px 0; display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--hair); font-size: 15px; }
+  .bullet-list li:last-child { border-bottom: 1px solid var(--hair); }
+  .bullet-list .check {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--positive-soft); color: var(--positive);
+    display: grid; place-items: center; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .demo-frame {
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-xl);
+    padding: 20px;
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Scan visual */
+  .scan-demo {
+    background: var(--ink);
+    border-radius: var(--r-lg);
+    padding: 32px;
+    color: #fff;
+    position: relative;
+    min-height: 340px;
+    display: grid; place-items: center;
+    overflow: hidden;
+  }
+  .scan-doc {
+    background: #fff;
+    color: var(--ink);
+    width: 220px;
+    aspect-ratio: 3/4;
+    border-radius: 10px;
+    padding: 20px;
+    transform: rotate(-3deg);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .scan-doc .line { height: 6px; background: var(--hair-strong); border-radius: 3px; margin-bottom: 8px; }
+  .scan-doc .line.short { width: 40%; }
+  .scan-doc .line.long { width: 80%; }
+  .scan-doc .corner-tl, .scan-doc .corner-br {
+    position: absolute; width: 16px; height: 16px;
+    border: 2px solid var(--ink); border-radius: 2px;
+  }
+  .scan-doc .corner-tl { top: -8px; left: -8px; border-right: 0; border-bottom: 0; }
+  .scan-doc .corner-br { bottom: -8px; right: -8px; border-left: 0; border-top: 0; }
+  .scan-detecting {
+    position: absolute; bottom: 20px; left: 0; right: 0; text-align: center;
+    font-size: 12px; color: rgba(255,255,255,0.7);
+  }
+
+  /* Bulk pay demo */
+  .bulk-demo { padding: 20px; }
+  .bulk-header {
+    padding: 16px; background: var(--bg-elev); border-radius: 14px; margin-bottom: 12px;
+  }
+  .bulk-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--hair); }
+  .bulk-row:last-child { border: 0; }
+  .bulk-row .cb {
+    width: 20px; height: 20px; border: 1.5px solid var(--hair-strong); border-radius: 6px;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .bulk-row.checked .cb { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .bulk-row .meta { font-size: 12px; color: var(--ink3); }
+
+  /* Approval thread */
+  .thread-event {
+    display: flex; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .thread-event:last-child { border: 0; }
+  .thread-dot {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: grid; place-items: center;
+    flex-shrink: 0; color: #fff; font-size: 12px;
+  }
+  .thread-dot.submitted { background: var(--ink2); }
+  .thread-dot.approved { background: var(--positive); }
+  .thread-dot.rejected { background: var(--danger); }
+  .thread-dot.note { background: var(--warn); }
+  .thread-time { font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+
+  /* Pill tabs */
+  .pill-tabs {
+    display: inline-flex; background: var(--bg-elev); padding: 4px; border-radius: var(--r-pill);
+    gap: 2px;
+  }
+  .pill-tabs .pt { padding: 8px 14px; font-size: 13px; font-weight: 600; border-radius: var(--r-pill); color: var(--ink3); cursor: pointer; }
+  .pill-tabs .pt.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+  /* Feature comparison strip */
+  .compare-strip {
+    background: var(--ink); color: #fff; border-radius: var(--r-xl); padding: 48px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+  }
+  .compare-strip .col h4 { font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin: 0 0 16px; font-weight: 700; }
+  .compare-strip .col li { padding: 8px 0; font-size: 14px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); list-style: none; }
+  .compare-strip .col ul { margin: 0; padding: 0; }
+  .compare-strip .x { color: rgba(255,255,255,0.3); }
+  .compare-strip .v { color: var(--sup-red); }
+  @media (max-width: 860px) { .compare-strip { grid-template-columns: 1fr; padding: 32px; gap: 28px; } }
+
+  /* Supplier badge wrap */
+  .badge-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .cat-pill {
+    padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px;
+    background: var(--surface); border: 1px solid var(--hair);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .cat-pill .d { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="shell nav-inner">
+    <a class="logo" href="index.html"><span class="logo-mark">R</span> Remti</a>
+    <nav class="nav-links">
+      <a href="product.html" class="active">Product</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="security.html">Security</a>
+      <a href="about.html">About</a>
+      <a href="dashboard.html">Dashboard</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-ghost" href="login.html">Log in</a>
+      <a class="btn btn-primary" href="login.html?signup=1">Get started</a>
+    </div>
+  </div>
+</header>
+
+<!-- PAGE HEAD -->
+<section class="page-head">
+  <div class="shell">
+    <div class="eyebrow">Product</div>
+    <h1 class="rise">The AP stack<br/>that fits in a jacket pocket.</h1>
+    <p class="lead rise-2">Every screen from the iOS app is on the web — plus a few things only a 27-inch monitor can do. Here's what's inside.</p>
+  </div>
+</section>
+
+<!-- SCAN -->
+<section id="scan" style="padding-top: 32px">
+  <div class="shell">
+    <div class="section-split">
+      <div>
+        <div class="feature-eyebrow">01 · Scan &amp; parse</div>
+        <h2 class="h1">Your invoices<br/>already know themselves.</h2>
+        <p class="muted" style="font-size:17px;margin-top:16px">Forward from your inbox, drag into the web app, or snap a photo on mobile. Remti detects edges, deskews, and extracts line items in under four seconds.</p>
+        <ul class="bullet-list">
+          <li><span class="check"><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></span> Supplier matched against your ledger — or created fresh with bank details ready to save.</li>
+          <li><span class="check"><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></span> Line items, VAT, currency, due date, PO number — all parsed and editable.</li>
+          <li><span class="check"><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></span> Duplicates flagged. Same invoice number? You'll know before you pay twice.</li>
+        </ul>
+      </div>
+      <div class="scan-demo">
+        <div class="scan-doc">
+          <span class="corner-tl"></span>
+          <span class="corner-br"></span>
+          <div class="line long"></div>
+          <div class="line short"></div>
+          <div style="height:14px"></div>
+          <div class="line long"></div>
+          <div class="line long"></div>
+          <div class="line short"></div>
+          <div style="height:14px"></div>
+          <div class="line short"></div>
+        </div>
+        <div class="scan-detecting">✨ Detecting…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BULK -->
+<section id="bulk" style="background: var(--bg-elev); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair)">
+  <div class="shell">
+    <div class="section-split reverse">
+      <div>
+        <div class="feature-eyebrow" style="color:var(--sup-blue)">02 · Bulk pay</div>
+        <h2 class="h1">Fifty suppliers.<br/>One authorisation.</h2>
+        <p class="muted" style="font-size:17px;margin-top:16px">Filter by overdue, by week, by supplier tag. Select, confirm, authorise in your banking app. Done — no CSV uploads, no portal logins.</p>
+        <div class="pill-tabs" style="margin-top:24px">
+          <span class="pt active">All</span>
+          <span class="pt">Overdue</span>
+          <span class="pt">This week</span>
+          <span class="pt">This month</span>
+        </div>
+      </div>
+      <div class="demo-frame bulk-demo">
+        <div class="bulk-header row-between">
+          <div>
+            <div class="eyebrow">SELECTED · 3 of 8</div>
+            <div class="num" style="font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-top:4px">£25,850.00</div>
+            <div style="font-size:13px;color:var(--ink3);margin-top:2px">Pays via Faster Payments · 1–2 hrs</div>
+          </div>
+          <a class="btn btn-primary">⚡ Pay 3 invoices</a>
+        </div>
+        <div class="bulk-row checked">
+          <div class="cb"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></div>
+          <div class="avatar" style="background:var(--sup-red)">R</div>
+          <div style="flex:1"><div style="font-weight:600">Redwood Packaging Co.</div><div class="meta">INV-4821</div></div>
+          <div style="text-align:right"><div class="num" style="font-weight:600">£8,420.00</div><div class="meta" style="color:var(--danger)">19d overdue</div></div>
+        </div>
+        <div class="bulk-row checked">
+          <div class="cb"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></div>
+          <div class="avatar" style="background:var(--sup-crimson)">F</div>
+          <div style="flex:1"><div style="font-weight:600">Farrow Materials</div><div class="meta">INV-4822</div></div>
+          <div style="text-align:right"><div class="num" style="font-weight:600">£12,150.00</div><div class="meta" style="color:var(--danger)">15d overdue</div></div>
+        </div>
+        <div class="bulk-row checked">
+          <div class="cb"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></div>
+          <div class="avatar" style="background:var(--sup-blue)">M</div>
+          <div style="flex:1"><div style="font-weight:600">Meridian Logistics</div><div class="meta">INV-4823</div></div>
+          <div style="text-align:right"><div class="num" style="font-weight:600">£5,280.00</div><div class="meta" style="color:var(--warn)">Due Apr 22</div></div>
+        </div>
+        <div class="bulk-row">
+          <div class="cb"></div>
+          <div class="avatar" style="background:var(--sup-purple)">K</div>
+          <div style="flex:1"><div style="font-weight:600">Kettle &amp; Hearth</div><div class="meta">INV-4824</div></div>
+          <div style="text-align:right"><div class="num" style="font-weight:600">£3,420.00</div><div class="meta">Due May 1</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPROVALS -->
+<section id="approvals">
+  <div class="shell">
+    <div class="section-split">
+      <div>
+        <div class="feature-eyebrow" style="color:var(--sup-purple)">03 · Approvals</div>
+        <h2 class="h1">Context stays<br/>on the invoice.</h2>
+        <p class="muted" style="font-size:17px;margin-top:16px">Route by amount, category, or supplier. Managers approve in-thread — from mobile at the school gate, or web at their desk. Audit log is automatic.</p>
+        <ul class="bullet-list">
+          <li><span class="check"><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></span> Threshold rules: auto-approve under £500, manager over £5,000.</li>
+          <li><span class="check"><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></span> Request revisions inline. Comments are threaded, not lost in Slack.</li>
+          <li><span class="check"><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8.5l3 3 7-8"/></svg></span> Who approved what, when — exported for audit whenever you want.</li>
+        </ul>
+      </div>
+      <div class="demo-frame">
+        <div class="row-between" style="padding-bottom:16px;border-bottom:1px solid var(--hair);margin-bottom:8px">
+          <div class="row">
+            <div class="avatar avatar-lg" style="background:var(--sup-crimson)">F</div>
+            <div>
+              <div style="font-weight:700">Farrow Materials</div>
+              <div style="font-size:13px;color:var(--ink3)">INV-4822 · £12,150.00</div>
+            </div>
+          </div>
+          <span class="pill pill-warn">Pending review</span>
+        </div>
+
+        <div class="thread-event">
+          <div class="thread-dot submitted">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="row-between">
+              <div style="font-weight:600;font-size:14px">Alex Rivera <span class="muted-3" style="font-weight:400">submitted</span></div>
+              <div class="thread-time">Mar 10, 9:14 AM</div>
+            </div>
+            <div style="font-size:14px;color:var(--ink2);margin-top:4px">Urgent restock needed. Steel inventory critically low.</div>
+          </div>
+        </div>
+
+        <div class="thread-event">
+          <div class="thread-dot note">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="row-between">
+              <div style="font-weight:600;font-size:14px">Jordan Lee <span class="muted-3" style="font-weight:400">added a note</span></div>
+              <div class="thread-time">Mar 12, 2:30 PM</div>
+            </div>
+            <div style="font-size:14px;color:var(--ink2);margin-top:4px">Checked with warehouse — confirmed we need this by end of month.</div>
+          </div>
+        </div>
+
+        <div class="row" style="gap:8px;padding-top:12px">
+          <a class="btn btn-primary" style="flex:1">Approve</a>
+          <a class="btn btn-secondary" style="flex:1">Request revision</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUPPLIERS -->
+<section id="suppliers" style="background: var(--ink); color: #fff; border-top: 1px solid var(--hair)">
+  <div class="shell">
+    <div style="max-width:720px;margin-bottom:48px">
+      <div class="eyebrow" style="color:rgba(255,255,255,0.55)">04 · Supplier ledger</div>
+      <h2 class="h1" style="margin-top:12px">Every supplier,<br/>every interaction.</h2>
+      <p style="color:rgba(255,255,255,0.65);font-size:17px;margin-top:16px">Balances, payment history, bank details, contracts. One page per supplier — built from everything your team has ever paid them for.</p>
+    </div>
+
+    <div class="grid-3" style="gap:16px">
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-xl);padding:24px">
+        <div class="row" style="gap:12px">
+          <div class="avatar avatar-lg" style="background:var(--sup-red)">R</div>
+          <div>
+            <div style="font-weight:700">Redwood Packaging Co.</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.5)">Packaging · Manchester</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">OWED</div><div class="num" style="font-weight:700;margin-top:4px">£18.4k</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">YTD</div><div class="num" style="font-weight:700;margin-top:4px">£72.8k</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">ON-TIME</div><div class="num" style="font-weight:700;margin-top:4px;color:var(--positive)">98%</div></div>
+        </div>
+        <div class="badge-wrap">
+          <span class="cat-pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:#fff"><span class="d" style="background:var(--sup-red)"></span>Preferred</span>
+          <span class="cat-pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:#fff">Volume discount</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-xl);padding:24px">
+        <div class="row" style="gap:12px">
+          <div class="avatar avatar-lg" style="background:var(--sup-forest)">S</div>
+          <div>
+            <div style="font-weight:700">Summit Ingredients</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.5)">Food · London</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">OWED</div><div class="num" style="font-weight:700;margin-top:4px">£15.7k</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">YTD</div><div class="num" style="font-weight:700;margin-top:4px">£68.3k</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">ON-TIME</div><div class="num" style="font-weight:700;margin-top:4px;color:var(--positive)">100%</div></div>
+        </div>
+        <div class="badge-wrap">
+          <span class="cat-pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:#fff"><span class="d" style="background:var(--sup-forest)"></span>Food</span>
+          <span class="cat-pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:#fff">Weekly orders</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-xl);padding:24px">
+        <div class="row" style="gap:12px">
+          <div class="avatar avatar-lg" style="background:var(--sup-rust)">A</div>
+          <div>
+            <div style="font-weight:700">Avalon Freight</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.5)">Logistics · Cardiff</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">OWED</div><div class="num" style="font-weight:700;margin-top:4px">£9.6k</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">YTD</div><div class="num" style="font-weight:700;margin-top:4px">£42.1k</div></div>
+          <div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em">ON-TIME</div><div class="num" style="font-weight:700;margin-top:4px;color:var(--positive)">94%</div></div>
+        </div>
+        <div class="badge-wrap">
+          <span class="cat-pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:#fff"><span class="d" style="background:var(--sup-rust)"></span>Freight</span>
+          <span class="cat-pill" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);color:#fff">International</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section>
+  <div class="shell">
+    <div style="text-align:center;max-width:640px;margin:0 auto 40px">
+      <div class="eyebrow">Why Remti</div>
+      <h2 class="h1" style="margin-top:12px">Less stack, more pay.</h2>
+    </div>
+    <div class="compare-strip">
+      <div class="col">
+        <h4>Spreadsheet + bank portal</h4>
+        <ul>
+          <li><span class="x">✕</span> Retyping sort codes</li>
+          <li><span class="x">✕</span> 2FA on every batch</li>
+          <li><span class="x">✕</span> CSV imports to Xero</li>
+          <li><span class="x">✕</span> Email approval chains</li>
+          <li><span class="x">✕</span> Paper receipts</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h4>Generic AP software</h4>
+        <ul>
+          <li><span class="x">✕</span> US-first invoicing</li>
+          <li><span class="x">✕</span> Holds your funds</li>
+          <li><span class="x">✕</span> ACH-style delays</li>
+          <li><span class="v">✓</span> Approvals</li>
+          <li><span class="x">✕</span> UK VAT gaps</li>
+        </ul>
+      </div>
+      <div class="col" style="background:rgba(176,74,29,0.14);border-radius:var(--r-lg);padding:20px;margin:-20px">
+        <h4 style="color:var(--sup-red)">Remti</h4>
+        <ul>
+          <li><span class="v">✓</span> Scan to paid in 2 min</li>
+          <li><span class="v">✓</span> Open Banking — your money</li>
+          <li><span class="v">✓</span> Faster Payments, 1–2 hrs</li>
+          <li><span class="v">✓</span> Threaded approvals</li>
+          <li><span class="v">✓</span> UK VAT, Xero sync</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding-top: 0">
+  <div class="shell">
+    <div style="background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-xl);padding:48px;text-align:center">
+      <h2 class="h2" style="max-width:600px;margin:0 auto">Ready to retire the spreadsheet?</h2>
+      <p class="muted" style="max-width:520px;margin:12px auto 24px">Connect your bank in 2 minutes, import your suppliers, and send your first batch today.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-primary btn-lg" href="login.html?signup=1">Start free — 14 days</a>
+        <a class="btn btn-secondary btn-lg" href="dashboard.html">Open dashboard demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="shell">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="logo" href="index.html" style="margin-bottom:16px"><span class="logo-mark">R</span> Remti</a>
+        <p class="muted" style="font-size:13px;max-width:280px">Supplier payments for UK businesses. Built by operators for operators.</p>
+      </div>
+      <div class="footer-col"><h4>Product</h4><a href="product.html">Overview</a><a href="product.html#scan">Scan</a><a href="product.html#bulk">Bulk pay</a><a href="product.html#approvals">Approvals</a><a href="dashboard.html">Dashboard</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="about.html">About</a><a href="about.html#careers">Careers</a><a href="#">Changelog</a></div>
+      <div class="footer-col"><h4>Resources</h4><a href="pricing.html">Pricing</a><a href="security.html">Security</a><a href="#">Docs</a></div>
+      <div class="footer-col"><h4>Legal</h4><a href="#">Terms</a><a href="#">Privacy</a><a href="security.html#compliance">Compliance</a></div>
+    </div>
+    <div class="footer-bottom"><div>© 2026 Remti Ltd</div><div>Made in London</div></div>
+  </div>
+</footer>
+
+</body>
+</html>

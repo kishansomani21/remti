@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dashboard — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+
+  .main { padding: 32px 40px; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap:16px; flex-wrap: wrap; }
+  .search { flex: 1; max-width: 420px; position: relative; }
+  .search input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--hair-strong); border-radius: var(--r-md); background: var(--surface); font-size: 14px; font-family: inherit; }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink3); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 980px) { .kpis { grid-template-columns: 1fr 1fr; } }
+  .kpi { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg); padding: 20px; }
+  .kpi .l { font-size: 12px; color: var(--ink3); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .kpi .v { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; font-family: ui-rounded, system-ui, sans-serif; }
+  .kpi .c { font-size: 12px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi .c.up { color: var(--positive); }
+  .kpi .c.dn { color: var(--danger); }
+
+  .grid-main { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
+  @media (max-width: 1100px) { .grid-main { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg); }
+  .panel-head { padding: 18px 20px; border-bottom: 1px solid var(--hair); display: flex; justify-content: space-between; align-items: center; }
+  .panel-head h3 { font-size: 15px; margin: 0; font-weight: 600; }
+  .panel-body { padding: 8px 0; }
+  .panel-body.pad { padding: 20px; }
+
+  /* Upcoming list */
+  .inv-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--hair); }
+  .inv-row:last-child { border: 0; }
+  .inv-row .meta { font-size: 12px; color: var(--ink3); }
+  .inv-row .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Bar chart */
+  .chart { padding: 20px; }
+  .chart-bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; align-items: end; height: 160px; margin-bottom: 10px; }
+  .chart-bar { background: var(--ink); border-radius: 4px 4px 0 0; position: relative; opacity: 0.9; }
+  .chart-bar.current { background: var(--sup-red); }
+  .chart-bar.future { background: var(--surface-alt); border: 1px dashed var(--hair-strong); }
+  .chart-x { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; font-size: 10px; color: var(--ink3); text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* Aging */
+  .aging { padding: 20px; display: grid; gap: 14px; }
+  .aging-row { display: flex; justify-content: space-between; font-size: 13px; align-items: center; gap: 12px; }
+  .aging-bar { flex: 1; height: 8px; background: var(--surface-alt); border-radius: 99px; overflow: hidden; margin: 0 12px; }
+  .aging-fill { height: 100%; background: var(--ink); border-radius: 99px; }
+  .aging-fill.d15 { background: var(--warn); }
+  .aging-fill.d30 { background: var(--danger); }
+
+  /* Approvals inline */
+  .approval-item { padding: 14px 20px; border-bottom: 1px solid var(--hair); display: flex; gap: 12px; align-items: center; }
+  .approval-item:last-child { border: 0; }
+  .approval-item .name { font-weight: 600; font-size: 14px; }
+  .approval-item .sub { font-size: 12px; color: var(--ink3); }
+
+  /* Supplier strip */
+  .strip { padding: 16px 20px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  @media (max-width: 1100px) { .strip { grid-template-columns: repeat(3, 1fr); } }
+  .strip-item { background: var(--bg); border: 1px solid var(--hair); border-radius: 10px; padding: 10px; text-align: center; }
+  .strip-item .avatar { margin: 0 auto 6px; }
+  .strip-item .nm { font-size: 11px; font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .strip-item .am { font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+  .tabs { display: flex; gap: 2px; background: var(--bg-elev); padding: 3px; border-radius: var(--r-pill); }
+  .tabs .t { padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--ink3); border-radius: var(--r-pill); cursor: pointer; }
+  .tabs .t.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a class="logo" href="index.html" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co · Ltd</div>
+
+    <div class="sb-section">
+      <h5>Workspace</h5>
+      <a class="sb-link active" href="#"><span class="ic">⌂</span>Dashboard</a>
+      <a class="sb-link" href="#"><span class="ic">☰</span>Invoices<span class="count">14</span></a>
+      <a class="sb-link" href="#"><span class="ic">✓</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="#"><span class="ic">⚡</span>Pay run</a>
+      <a class="sb-link" href="#"><span class="ic">👥</span>Suppliers</a>
+      <a class="sb-link" href="#"><span class="ic">▤</span>Reports</a>
+    </div>
+
+    <div class="sb-section">
+      <h5>Setup</h5>
+      <a class="sb-link" href="#"><span class="ic">⊞</span>Bank accounts</a>
+      <a class="sb-link" href="#"><span class="ic">⇄</span>Integrations</a>
+      <a class="sb-link" href="#"><span class="ic">⚙</span>Settings</a>
+    </div>
+
+    <div class="sb-user">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">Jordan Morgan</div>
+        <div style="font-size:11px;color:var(--ink3)">Admin</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">Monday · April 20</div>
+        <h1 class="h2" style="margin-top:4px">Good morning, Jordan.</h1>
+      </div>
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input placeholder="Search invoices, suppliers, payments…"/>
+      </div>
+      <div class="row">
+        <button class="btn btn-secondary">Scan invoice</button>
+        <button class="btn btn-primary">⚡ Start pay run</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="l">Payable now</div>
+        <div class="v num">£56,430</div>
+        <div class="c dn">⚠ 2 overdue · £20,570</div>
+      </div>
+      <div class="kpi">
+        <div class="l">Due this week</div>
+        <div class="v num">£29,070</div>
+        <div class="c">8 invoices · 7 suppliers</div>
+      </div>
+      <div class="kpi">
+        <div class="l">Paid this month</div>
+        <div class="v num">£184,620</div>
+        <div class="c up">↑ 12% vs. March</div>
+      </div>
+      <div class="kpi">
+        <div class="l">Avg. time to pay</div>
+        <div class="v num">2.4 <span style="font-size:18px;color:var(--ink3)">days</span></div>
+        <div class="c up">↓ 0.8 days</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid-main">
+      <!-- LEFT COLUMN -->
+      <div class="stack-md" style="display:flex;flex-direction:column;gap:16px">
+        <!-- Upcoming -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Upcoming payments</h3>
+            <div class="tabs">
+              <span class="t active">This week</span>
+              <span class="t">Overdue</span>
+              <span class="t">All</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="inv-row" style="background:rgba(162,48,48,0.04)">
+              <div class="avatar" style="background:var(--sup-crimson)">F</div>
+              <div>
+                <div style="font-weight:600">Farrow Materials</div>
+                <div class="meta">INV-4822 · Steel restock</div>
+              </div>
+              <div style="text-align:right">
+                <div class="amt num">£12,150.00</div>
+                <div class="meta" style="color:var(--danger);font-weight:600">15d overdue</div>
+              </div>
+              <button class="btn btn-primary" style="padding:7px 12px;font-size:12px">Pay</button>
+            </div>
+            <div class="inv-row" style="background:rgba(162,48,48,0.04)">
+              <div class="avatar" style="background:var(--sup-red)">R</div>
+              <div>
+                <div style="font-weight:600">Redwood Packaging</div>
+                <div class="meta">INV-4821 · Crates &amp; pallets</div>
+              </div>
+              <div style="text-align:right">
+                <div class="amt num">£8,420.00</div>
+                <div class="meta" style="color:var(--danger);font-weight:600">19d overdue</div>
+              </div>
+              <button class="btn btn-primary" style="padding:7px 12px;font-size:12px">Pay</button>
+            </div>
+            <div class="inv-row">
+              <div class="avatar" style="background:var(--sup-blue)">M</div>
+              <div>
+                <div style="font-weight:600">Meridian Logistics</div>
+                <div class="meta">INV-4823 · Q2 freight</div>
+              </div>
+              <div style="text-align:right">
+                <div class="amt num">£5,280.00</div>
+                <div class="meta" style="color:var(--warn)">Due Apr 22</div>
+              </div>
+              <button class="btn btn-secondary" style="padding:7px 12px;font-size:12px">Schedule</button>
+            </div>
+            <div class="inv-row">
+              <div class="avatar" style="background:var(--sup-green)">J</div>
+              <div>
+                <div style="font-weight:600">Juniper Cleaning</div>
+                <div class="meta">INV-4824 · March service</div>
+              </div>
+              <div style="text-align:right">
+                <div class="amt num">£1,580.00</div>
+                <div class="meta">Due Apr 25</div>
+              </div>
+              <button class="btn btn-secondary" style="padding:7px 12px;font-size:12px">Schedule</button>
+            </div>
+            <div class="inv-row">
+              <div class="avatar" style="background:var(--sup-purple)">K</div>
+              <div>
+                <div style="font-weight:600">Kettle &amp; Hearth</div>
+                <div class="meta">INV-4825 · Coffee supplies</div>
+              </div>
+              <div style="text-align:right">
+                <div class="amt num">£3,420.00</div>
+                <div class="meta">Due May 1</div>
+              </div>
+              <button class="btn btn-secondary" style="padding:7px 12px;font-size:12px">Schedule</button>
+            </div>
+            <div class="inv-row">
+              <div class="avatar" style="background:var(--sup-olive)">O</div>
+              <div>
+                <div style="font-weight:600">Olive &amp; Oak Linen</div>
+                <div class="meta">INV-4826 · April laundry</div>
+              </div>
+              <div style="text-align:right">
+                <div class="amt num">£2,460.00</div>
+                <div class="meta">Due May 2</div>
+              </div>
+              <button class="btn btn-secondary" style="padding:7px 12px;font-size:12px">Schedule</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Cash out · next 12 weeks</h3>
+            <span class="pill">Scheduled + pending</span>
+          </div>
+          <div class="chart">
+            <div class="chart-bars">
+              <div class="chart-bar current" style="height:68%"></div>
+              <div class="chart-bar" style="height:52%"></div>
+              <div class="chart-bar" style="height:74%"></div>
+              <div class="chart-bar" style="height:44%"></div>
+              <div class="chart-bar" style="height:82%"></div>
+              <div class="chart-bar" style="height:38%"></div>
+              <div class="chart-bar" style="height:60%"></div>
+              <div class="chart-bar future" style="height:56%"></div>
+              <div class="chart-bar future" style="height:48%"></div>
+              <div class="chart-bar future" style="height:72%"></div>
+              <div class="chart-bar future" style="height:34%"></div>
+              <div class="chart-bar future" style="height:42%"></div>
+            </div>
+            <div class="chart-x">
+              <span>W17</span><span>W18</span><span>W19</span><span>W20</span><span>W21</span><span>W22</span><span>W23</span><span>W24</span><span>W25</span><span>W26</span><span>W27</span><span>W28</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top suppliers -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Top suppliers · YTD</h3>
+            <a class="btn btn-ghost" style="font-size:12px" href="#">View all →</a>
+          </div>
+          <div class="strip">
+            <div class="strip-item"><div class="avatar" style="background:var(--sup-red)">R</div><div class="nm">Redwood</div><div class="am">£72.8k</div></div>
+            <div class="strip-item"><div class="avatar" style="background:var(--sup-forest)">S</div><div class="nm">Summit</div><div class="am">£68.3k</div></div>
+            <div class="strip-item"><div class="avatar" style="background:var(--sup-blue)">M</div><div class="nm">Meridian</div><div class="am">£54.1k</div></div>
+            <div class="strip-item"><div class="avatar" style="background:var(--sup-rust)">A</div><div class="nm">Avalon</div><div class="am">£42.1k</div></div>
+            <div class="strip-item"><div class="avatar" style="background:var(--sup-purple)">K</div><div class="nm">Kettle</div><div class="am">£28.6k</div></div>
+            <div class="strip-item"><div class="avatar" style="background:var(--sup-olive)">O</div><div class="nm">Olive&amp;Oak</div><div class="am">£19.4k</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="stack-md" style="display:flex;flex-direction:column;gap:16px">
+        <!-- Approvals -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Waiting on you</h3>
+            <span class="pill pill-warn">3 pending</span>
+          </div>
+          <div>
+            <div class="approval-item">
+              <div class="avatar" style="background:var(--sup-crimson)">F</div>
+              <div style="flex:1">
+                <div class="name">Farrow Materials</div>
+                <div class="sub">£12,150 · 15d overdue</div>
+              </div>
+              <button class="btn btn-primary" style="padding:7px 12px;font-size:12px">Review</button>
+            </div>
+            <div class="approval-item">
+              <div class="avatar" style="background:var(--sup-black)">B</div>
+              <div style="flex:1">
+                <div class="name">Blackstone Printing</div>
+                <div class="sub">£2,340 · Due in 5 days</div>
+              </div>
+              <button class="btn btn-secondary" style="padding:7px 12px;font-size:12px">Review</button>
+            </div>
+            <div class="approval-item">
+              <div class="avatar" style="background:var(--sup-slate)">N</div>
+              <div style="flex:1">
+                <div class="name">Northgate Facilities</div>
+                <div class="sub">£2,450 · Due in 8 days</div>
+              </div>
+              <button class="btn btn-secondary" style="padding:7px 12px;font-size:12px">Review</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Connected accounts</h3>
+            <span class="pill pill-positive pill-dot">Live</span>
+          </div>
+          <div class="panel-body pad">
+            <div class="row-between" style="padding:10px 0">
+              <div class="row">
+                <div style="width:36px;height:36px;border-radius:8px;background:#00aeef;color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px">B</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px">Barclays · Operating</div>
+                  <div style="font-size:12px;color:var(--ink3)">··· 4829 · GBP</div>
+                </div>
+              </div>
+              <div class="num" style="font-weight:700">£248,920</div>
+            </div>
+            <div class="hr"></div>
+            <div class="row-between" style="padding:10px 0">
+              <div class="row">
+                <div style="width:36px;height:36px;border-radius:8px;background:#e2000f;color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px">H</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px">HSBC · Payroll</div>
+                  <div style="font-size:12px;color:var(--ink3)">··· 1187 · GBP</div>
+                </div>
+              </div>
+              <div class="num" style="font-weight:700">£62,140</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aging -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Payables aging</h3>
+            <span class="pill">£56,430 total</span>
+          </div>
+          <div class="aging">
+            <div class="aging-row">
+              <span style="width:70px;font-weight:600">Current</span>
+              <div class="aging-bar"><div class="aging-fill" style="width:38%"></div></div>
+              <span class="num">£21,460</span>
+            </div>
+            <div class="aging-row">
+              <span style="width:70px;font-weight:600">1–15d</span>
+              <div class="aging-bar"><div class="aging-fill" style="width:26%"></div></div>
+              <span class="num">£14,400</span>
+            </div>
+            <div class="aging-row">
+              <span style="width:70px;font-weight:600;color:var(--warn)">16–30d</span>
+              <div class="aging-bar"><div class="aging-fill d15" style="width:22%"></div></div>
+              <span class="num">£12,150</span>
+            </div>
+            <div class="aging-row">
+              <span style="width:70px;font-weight:600;color:var(--danger)">30+ d</span>
+              <div class="aging-bar"><div class="aging-fill d30" style="width:14%"></div></div>
+              <span class="num">£8,420</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Activity</h3>
+            <a class="btn btn-ghost" style="font-size:12px" href="#">Log →</a>
+          </div>
+          <div>
+            <div class="approval-item">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--positive-soft);color:var(--positive);display:grid;place-items:center;font-size:13px">✓</div>
+              <div style="flex:1">
+                <div style="font-size:13px"><b>Meridian Logistics</b> paid · £5,280</div>
+                <div class="sub">2 hrs ago · Via Faster Payments</div>
+              </div>
+            </div>
+            <div class="approval-item">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--surface-alt);color:var(--ink2);display:grid;place-items:center;font-size:13px">✎</div>
+              <div style="flex:1">
+                <div style="font-size:13px"><b>Elena</b> approved Summit Ingredients</div>
+                <div class="sub">3 hrs ago · £7,890</div>
+              </div>
+            </div>
+            <div class="approval-item">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--surface-alt);color:var(--ink2);display:grid;place-items:center;font-size:13px">📥</div>
+              <div style="flex:1">
+                <div style="font-size:13px">4 invoices imported from Xero</div>
+                <div class="sub">Yesterday · 16:42</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="color:var(--ink3);font-size:12px;text-align:center;margin-top:48px;padding:24px;border-top:1px solid var(--hair)">
+      <a href="index.html" style="color:var(--ink2);text-decoration:underline">← Back to marketing site</a>
+    </div>
+  </main>
+</div>
+</body></html>

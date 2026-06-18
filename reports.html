@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Reports — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; font-weight: 500; color: var(--ink2); transition: background .12s, color .12s;
+  }
+  .sb-link:hover { background: var(--hair); color: var(--ink); }
+  .sb-link.active { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-sm); }
+  .sb-link .ic { width: 20px; text-align: center; font-size: 15px; }
+  .sb-link .count {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    background: var(--danger-soft); color: var(--danger); padding: 2px 7px; border-radius: var(--r-pill);
+  }
+  .sb-user {
+    margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px;
+    border-top: 1px solid var(--hair);
+  }
+
+  .main { padding: 32px 40px 64px; max-width: 1400px; width: 100%; }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+  .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .top-bar-right { display: flex; align-items: center; gap: 10px; }
+
+  /* Date range tabs */
+  .range-tabs {
+    display: inline-flex; background: var(--surface); border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md); overflow: hidden;
+  }
+  .range-tab {
+    padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--ink3);
+    cursor: pointer; transition: all .15s; border: none; background: none;
+  }
+  .range-tab.active { background: var(--ink); color: #fff; border-radius: var(--r-md); }
+  .range-tab:not(.active):hover { color: var(--ink); background: var(--hair); }
+
+  /* Two-column layout */
+  .reports-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; }
+  @media (max-width: 1100px) { .reports-grid { grid-template-columns: 1fr; } }
+
+  /* Panel */
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 0; }
+  .panel-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .panel-body { padding: 14px 22px 22px; }
+
+  /* Chart */
+  .chart-container { height: 220px; display: flex; align-items: flex-end; gap: 8px; padding-top: 12px; }
+  .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .chart-bar {
+    width: 100%; border-radius: 6px 6px 0 0; background: var(--accent-soft);
+    transition: background .15s; cursor: pointer; min-height: 4px; position: relative;
+  }
+  .chart-bar:hover { background: var(--ink); }
+  .chart-bar:hover .chart-tooltip { opacity: 1; transform: translateY(-4px); }
+  .chart-bar.current { background: var(--ink); }
+  .chart-label { font-size: 11px; color: var(--ink3); font-weight: 600; }
+  .chart-value { font-size: 11px; font-weight: 700; color: var(--ink2); }
+  .chart-tooltip {
+    position: absolute; top: -28px; left: 50%; transform: translateX(-50%) translateY(0);
+    background: var(--ink); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+    opacity: 0; transition: opacity .15s, transform .15s; pointer-events: none;
+  }
+
+  /* Payment history table */
+  .history-table { width: 100%; border-collapse: collapse; }
+  .history-table th {
+    text-align: left; font-size: 11px; font-weight: 700; color: var(--ink3);
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 0;
+    border-bottom: 1px solid var(--hair-strong);
+  }
+  .history-table th:last-child { text-align: right; }
+  .history-table td {
+    padding: 12px 0; border-bottom: 1px solid var(--hair); font-size: 13px; vertical-align: middle;
+  }
+  .history-table td:last-child { text-align: right; }
+  .history-table tr:hover td { background: rgba(26,26,26,0.02); }
+  .supplier-cell { display: flex; align-items: center; gap: 10px; }
+
+  /* Right column */
+  .right-col > * + * { margin-top: 20px; }
+
+  /* Spending by supplier */
+  .spend-row { margin-bottom: 16px; }
+  .spend-row:last-child { margin-bottom: 0; }
+  .spend-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .spend-name { font-size: 13px; font-weight: 600; }
+  .spend-amount { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .spend-bar-bg { height: 8px; background: var(--hair); border-radius: 4px; overflow: hidden; }
+  .spend-bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+  .spend-pct { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  /* Performance grid */
+  .perf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .perf-card {
+    padding: 16px; border-radius: var(--r-md); background: var(--bg); text-align: center;
+  }
+  .perf-value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .perf-label { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+  /* Aging */
+  .aging-row { margin-bottom: 14px; }
+  .aging-row:last-child { margin-bottom: 0; }
+  .aging-label-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .aging-label { font-size: 12px; font-weight: 600; }
+  .aging-value { font-size: 12px; font-weight: 700; }
+  .aging-bar-bg { height: 8px; background: var(--hair); border-radius: 4px; overflow: hidden; }
+  .aging-bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+
+  .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link active" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div class="page-title">Reports</div>
+      <div class="top-bar-right">
+        <div class="range-tabs">
+          <button class="range-tab" onclick="setRange('month',this)">This month</button>
+          <button class="range-tab active" onclick="setRange('quarter',this)">Last 3 months</button>
+          <button class="range-tab" onclick="setRange('ytd',this)">YTD</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="reports-grid">
+      <!-- Left column -->
+      <div>
+        <!-- Monthly spending chart -->
+        <div class="card" style="margin-bottom:24px">
+          <div class="panel-header">
+            <div class="panel-title">Monthly spending</div>
+            <div class="eyebrow">Nov 2025 — Apr 2026</div>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container" id="spending-chart"></div>
+          </div>
+        </div>
+
+        <!-- Payment history -->
+        <div class="card">
+          <div class="panel-header">
+            <div class="panel-title">Payment history</div>
+            <div class="eyebrow" id="history-count"></div>
+          </div>
+          <div class="panel-body">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Supplier</th>
+                  <th>Invoice #</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="right-col">
+        <!-- Spending by supplier -->
+        <div class="card">
+          <div class="panel-header">
+            <div class="panel-title">Spending by supplier</div>
+            <div class="eyebrow">YTD</div>
+          </div>
+          <div class="panel-body" id="supplier-spend"></div>
+        </div>
+
+        <!-- Payment performance -->
+        <div class="card">
+          <div class="panel-header">
+            <div class="panel-title">Payment performance</div>
+          </div>
+          <div class="panel-body">
+            <div class="perf-grid">
+              <div class="perf-card">
+                <div class="perf-value">2.4</div>
+                <div class="perf-label">Avg days to pay</div>
+              </div>
+              <div class="perf-card">
+                <div class="perf-value" style="color:var(--positive)">94%</div>
+                <div class="perf-label">On-time rate</div>
+              </div>
+              <div class="perf-card">
+                <div class="perf-value">38%</div>
+                <div class="perf-label">Early payment rate</div>
+              </div>
+              <div class="perf-card">
+                <div class="perf-value" style="color:var(--danger)">6%</div>
+                <div class="perf-label">Late payment rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payables aging -->
+        <div class="card">
+          <div class="panel-header">
+            <div class="panel-title">Payables aging</div>
+          </div>
+          <div class="panel-body" id="aging-panel"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script>
+  function logout() { window.location.href = '/login'; }
+
+  // Monthly spending data
+  var monthlyData = [
+    { label: 'Nov', amount: 142300 },
+    { label: 'Dec', amount: 168400 },
+    { label: 'Jan', amount: 155200 },
+    { label: 'Feb', amount: 171800 },
+    { label: 'Mar', amount: 178900 },
+    { label: 'Apr', amount: 0 }
+  ];
+
+  // Calculate Apr from paid invoices in April
+  var aprTotal = 0;
+  DATA.history.forEach(function(h) {
+    if (h.date.indexOf('Apr') === 0 && h.status === 'paid') aprTotal += h.amount;
+  });
+  monthlyData[5].amount = aprTotal || 15990;
+
+  function renderChart() {
+    var chart = document.getElementById('spending-chart');
+    var maxVal = 0;
+    monthlyData.forEach(function(d) { if (d.amount > maxVal) maxVal = d.amount; });
+    var html = '';
+    monthlyData.forEach(function(d, i) {
+      var pct = maxVal > 0 ? (d.amount / maxVal * 100) : 0;
+      var isCurrent = i === monthlyData.length - 1;
+      html += '<div class="chart-bar-wrap">'
+        + '<div class="chart-value num">' + fmtK(d.amount) + '</div>'
+        + '<div class="chart-bar ' + (isCurrent ? 'current' : '') + '" style="height:' + Math.max(pct, 3) + '%">'
+        + '<div class="chart-tooltip">' + fmt(d.amount) + '</div>'
+        + '</div>'
+        + '<div class="chart-label">' + d.label + '</div>'
+        + '</div>';
+    });
+    chart.innerHTML = html;
+  }
+
+  function renderHistory() {
+    var tbody = document.getElementById('history-body');
+    var html = '';
+    DATA.history.forEach(function(h) {
+      var statusClass = h.status === 'paid' ? 'pill-positive' : h.status === 'processing' ? '' : 'pill-danger';
+      var statusLabel = h.status.charAt(0).toUpperCase() + h.status.slice(1);
+      // Find matching invoice number
+      var invNum = '--';
+      var matchedInv = DATA.invoices.find(function(inv) {
+        return inv.supplierName === h.supplierName && inv.status === 'paid' && inv.amount === h.amount;
+      });
+      if (matchedInv) invNum = matchedInv.number;
+      else {
+        // Check processing
+        var procInv = DATA.invoices.find(function(inv) {
+          return inv.supplierName === h.supplierName && inv.status === 'processing' && inv.amount === h.amount;
+        });
+        if (procInv) invNum = procInv.number;
+      }
+
+      html += '<tr>'
+        + '<td style="white-space:nowrap;color:var(--ink2)">' + h.date + '</td>'
+        + '<td><div class="supplier-cell"><div class="avatar avatar-sm" style="background:' + h.color + '">' + h.initial + '</div>' + h.supplierName + '</div></td>'
+        + '<td style="font-weight:600">' + invNum + '</td>'
+        + '<td style="color:var(--ink2)">' + h.method + '</td>'
+        + '<td><span class="pill pill-dot ' + statusClass + '" style="font-size:10px">' + statusLabel + '</span></td>'
+        + '<td class="num" style="font-weight:700">' + fmt(h.amount) + '</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+    document.getElementById('history-count').textContent = DATA.history.length + ' payments';
+  }
+
+  function renderSupplierSpend() {
+    var el = document.getElementById('supplier-spend');
+    // Sort suppliers by paidYTD descending
+    var sorted = DATA.suppliers.slice().sort(function(a, b) { return b.paidYTD - a.paidYTD; });
+    var maxSpend = sorted[0] ? sorted[0].paidYTD : 1;
+    var totalYTD = 0;
+    sorted.forEach(function(s) { totalYTD += s.paidYTD; });
+
+    var html = '';
+    sorted.forEach(function(s) {
+      var pct = totalYTD > 0 ? (s.paidYTD / totalYTD * 100) : 0;
+      var barPct = maxSpend > 0 ? (s.paidYTD / maxSpend * 100) : 0;
+      html += '<div class="spend-row">'
+        + '<div class="spend-label-row"><span class="spend-name">' + s.name + '</span><span class="spend-amount num">' + fmt(s.paidYTD) + '</span></div>'
+        + '<div class="spend-bar-bg"><div class="spend-bar-fill" style="width:' + barPct + '%;background:' + s.color + '"></div></div>'
+        + '<div class="spend-pct">' + pct.toFixed(1) + '% of total</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderAging() {
+    var el = document.getElementById('aging-panel');
+    var aging = [
+      { label: 'Current', amount: 21460, color: 'var(--positive)' },
+      { label: '1-15 days', amount: 14400, color: 'var(--warn)' },
+      { label: '16-30 days', amount: 12150, color: '#B25A1C' },
+      { label: '30+ days', amount: 8420, color: 'var(--danger)' }
+    ];
+    var total = 0;
+    aging.forEach(function(a) { total += a.amount; });
+    var html = '';
+    aging.forEach(function(a) {
+      var pct = total > 0 ? (a.amount / total * 100) : 0;
+      html += '<div class="aging-row">'
+        + '<div class="aging-label-row"><span class="aging-label">' + a.label + '</span><span class="aging-value num">' + fmt(a.amount) + '</span></div>'
+        + '<div class="aging-bar-bg"><div class="aging-bar-fill" style="width:' + pct + '%;background:' + a.color + '"></div></div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function setRange(range, tabEl) {
+    document.querySelectorAll('.range-tab').forEach(function(t) { t.classList.remove('active'); });
+    if (tabEl) tabEl.classList.add('active');
+    // In a real app this would filter data; for demo we keep the same view
+  }
+
+  function exportCSV() {
+    // Build CSV from history data
+    var csv = 'Date,Supplier,Amount,Method,Status\n';
+    DATA.history.forEach(function(h) {
+      csv += h.date + ',' + h.supplierName + ',' + h.amount.toFixed(2) + ',' + h.method + ',' + h.status + '\n';
+    });
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'remti-payment-history.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Init
+  renderChart();
+  renderHistory();
+  renderSupplierSpend();
+  renderAging();
+</script>
+</body>
+</html>

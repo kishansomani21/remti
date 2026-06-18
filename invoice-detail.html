@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Invoice — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+
+  .main { padding: 32px 40px; flex: 1; min-width: 0; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+    color: var(--ink2); margin-bottom: 24px;
+  }
+  .back-link:hover { color: var(--ink); }
+
+  /* Two-col layout */
+  .detail-grid {
+    display: grid; grid-template-columns: 2fr 1fr; gap: 32px; align-items: start;
+  }
+  @media (max-width: 1080px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  /* Hero */
+  .hero-section { margin-bottom: 32px; }
+  .hero-amount {
+    font-size: 42px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;
+    font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
+    margin: 0 0 8px 0;
+  }
+  .hero-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .hero-meta .inv-num { font-size: 14px; color: var(--ink2); font-weight: 500; }
+
+  /* Supplier row */
+  .supplier-row {
+    display: flex; align-items: center; gap: 14px; padding: 20px;
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    margin-bottom: 24px;
+  }
+  .supplier-row .avatar { width: 44px; height: 44px; font-size: 16px; }
+  .supplier-row .info { flex: 1; min-width: 0; }
+  .supplier-row .info .name { font-weight: 700; font-size: 15px; }
+  .supplier-row .info .sub { font-size: 12px; color: var(--ink3); }
+  .supplier-row .view-link { font-size: 13px; font-weight: 600; color: var(--ink2); white-space: nowrap; }
+  .supplier-row .view-link:hover { color: var(--ink); }
+
+  /* Meta grid */
+  .meta-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;
+  }
+  .meta-item {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-md);
+    padding: 16px;
+  }
+  .meta-item .label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink3); margin-bottom: 4px;
+  }
+  .meta-item .value { font-size: 14px; font-weight: 600; }
+
+  /* Line items table */
+  .line-items-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .line-items-card .card-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--hair);
+    font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink3);
+  }
+  .li-table { width: 100%; border-collapse: collapse; }
+  .li-table th {
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink3); padding: 12px 20px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .li-table th:last-child { text-align: right; }
+  .li-table th.col-qty { text-align: center; width: 60px; }
+  .li-table th.col-unit { text-align: right; width: 110px; }
+  .li-table td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid var(--hair); }
+  .li-table tbody tr:last-child td { border-bottom: 0; }
+  .li-table td:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .li-table td.col-qty { text-align: center; color: var(--ink2); }
+  .li-table td.col-unit { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink2); }
+
+  /* Totals */
+  .totals-section {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    padding: 0 20px 20px; margin-top: -4px;
+  }
+  .totals-section .total-row {
+    display: flex; gap: 32px; font-size: 14px; width: 260px; justify-content: space-between;
+  }
+  .totals-section .total-row .t-label { color: var(--ink2); }
+  .totals-section .total-row .t-value { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+  .totals-section .total-row.grand { font-size: 16px; font-weight: 700; padding-top: 8px; border-top: 2px solid var(--hair-strong); }
+  .totals-section .total-row.grand .t-label { color: var(--ink); }
+
+  /* Notes */
+  .notes-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .notes-card .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+  .notes-card .body { font-size: 14px; color: var(--ink2); }
+
+  /* Right column panels */
+  .right-col > * + * { margin-top: 20px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 20px; box-shadow: var(--shadow-sm);
+  }
+  .panel-head {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink3); margin-bottom: 16px;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; }
+  .tl-item {
+    display: flex; gap: 14px; position: relative; padding-bottom: 20px;
+  }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-item::before {
+    content: ""; position: absolute; left: 11px; top: 24px; bottom: 0;
+    width: 1.5px; background: var(--hair-strong);
+  }
+  .tl-item:last-child::before { display: none; }
+  .tl-dot {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 11px; font-weight: 700;
+    position: relative; z-index: 1;
+  }
+  .tl-dot.done { background: var(--positive-soft); color: var(--positive); }
+  .tl-dot.current { background: var(--ink); color: #fff; animation: pulse-ring 2s infinite; }
+  .tl-dot.warning { background: var(--warn-soft); color: var(--warn); }
+  .tl-dot.pending { background: var(--surface-alt); color: var(--ink4); border: 1.5px dashed var(--hair-strong); }
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(26,26,26,0.15); }
+    50% { box-shadow: 0 0 0 6px rgba(26,26,26,0); }
+  }
+  .tl-body { flex: 1; min-width: 0; padding-top: 2px; }
+  .tl-body .tl-title { font-size: 13px; font-weight: 600; }
+  .tl-body .tl-sub { font-size: 12px; color: var(--ink3); }
+  .tl-body .tl-date { font-size: 11px; color: var(--ink4); margin-top: 2px; }
+
+  /* Payment info */
+  .pay-info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 13px; }
+  .pay-info-row:last-child { border-bottom: 0; }
+  .pay-info-row .pi-label { color: var(--ink3); }
+  .pay-info-row .pi-value { font-weight: 600; }
+
+  /* Action panel */
+  .action-panel .btn { width: 100%; margin-bottom: 10px; }
+  .action-panel .btn:last-child { margin-bottom: 0; }
+
+  /* Paid banner */
+  .paid-banner {
+    background: var(--positive-soft); border: 1px solid rgba(47,110,62,0.18);
+    border-radius: var(--r-md); padding: 16px 20px; text-align: center;
+    margin-bottom: 12px;
+  }
+  .paid-banner .paid-label { font-size: 14px; font-weight: 700; color: var(--positive); margin-bottom: 2px; }
+  .paid-banner .paid-detail { font-size: 12px; color: var(--positive); opacity: 0.8; }
+
+  /* Processing banner */
+  .processing-banner {
+    background: rgba(43,91,215,0.06); border: 1px solid rgba(43,91,215,0.18);
+    border-radius: var(--r-md); padding: 16px 20px; text-align: center;
+    margin-bottom: 12px; color: var(--sup-blue);
+  }
+  .processing-banner .proc-label { font-size: 14px; font-weight: 700; }
+  .processing-banner .proc-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(43,91,215,0.2);
+    border-top-color: var(--sup-blue); border-radius: 50%; animation: spin .8s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link active" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script src="data.js"></script>
+<script>
+  function logout() { window.location.href = '/login'; }
+
+  const params = new URLSearchParams(window.location.search);
+  const invoiceId = params.get('id') || 'inv-001';
+  const inv = DATA.invoices.find(i => i.id === invoiceId);
+
+  if (!inv) {
+    document.getElementById('mainContent').innerHTML = '<div style="padding:48px;text-align:center;color:var(--ink3)">Invoice not found. <a href="/invoices" style="color:var(--ink);font-weight:600">Back to invoices</a></div>';
+  } else {
+    document.title = `${inv.number} — Remti`;
+    const supplier = DATA.suppliers.find(s => s.id === inv.supplierId) || {};
+
+    // Status pill
+    function statusPill(s) {
+      if (s === 'overdue') return '<span class="pill pill-danger pill-dot">Overdue</span>';
+      if (s === 'due') return '<span class="pill pill-dot">Due</span>';
+      if (s === 'paid') return '<span class="pill pill-positive pill-dot">Paid</span>';
+      if (s === 'draft') return '<span class="pill">Draft</span>';
+      if (s === 'processing') return '<span class="pill pill-dot" style="background:rgba(43,91,215,0.08);color:var(--sup-blue);border-color:rgba(43,91,215,0.18)">Processing</span>';
+      return '<span class="pill">' + s + '</span>';
+    }
+
+    // Timeline dot
+    function tlDot(status) {
+      if (status === 'done') return '<div class="tl-dot done">&#10003;</div>';
+      if (status === 'current') return '<div class="tl-dot current">&#9679;</div>';
+      if (status === 'warning') return '<div class="tl-dot warning">!</div>';
+      return '<div class="tl-dot pending">&#8212;</div>';
+    }
+
+    // Line items HTML
+    const lineItemsHTML = inv.lineItems.map(li =>
+      `<tr>
+        <td>${li.desc}</td>
+        <td class="col-qty">${li.qty}</td>
+        <td class="col-unit">${fmt(li.unit)}</td>
+        <td>${fmt(li.qty * li.unit)}</td>
+      </tr>`
+    ).join('');
+
+    // Timeline HTML
+    const timelineHTML = inv.timeline.map(t =>
+      `<div class="tl-item">
+        ${tlDot(t.status)}
+        <div class="tl-body">
+          <div class="tl-title">${t.title}</div>
+          <div class="tl-sub">${t.sub}</div>
+          ${t.date ? `<div class="tl-date">${t.date}</div>` : ''}
+        </div>
+      </div>`
+    ).join('');
+
+    // Payment info
+    let payInfoHTML = '';
+    if (supplier.paymentMethod) {
+      payInfoHTML += `<div class="pay-info-row"><span class="pi-label">Method</span><span class="pi-value">${supplier.paymentMethod}</span></div>`;
+    }
+    if (supplier.bankName) {
+      payInfoHTML += `<div class="pay-info-row"><span class="pi-label">Bank</span><span class="pi-value">${supplier.bankName}</span></div>`;
+    }
+    if (supplier.sortCode) {
+      payInfoHTML += `<div class="pay-info-row"><span class="pi-label">Sort code</span><span class="pi-value">${supplier.sortCode.replace(/(\d{2})(\d{2})(\d{2})/, '$1-$2-$3')}</span></div>`;
+    }
+    if (supplier.accountLast4) {
+      payInfoHTML += `<div class="pay-info-row"><span class="pi-label">Account</span><span class="pi-value">****${supplier.accountLast4}</span></div>`;
+    }
+    if (inv.discount) {
+      payInfoHTML += `<div class="pay-info-row"><span class="pi-label">Discount</span><span class="pi-value" style="color:var(--positive)">${inv.discount}</span></div>`;
+    }
+
+    // Action panel
+    let actionHTML = '';
+    if (inv.status === 'paid') {
+      actionHTML = `
+        <div class="paid-banner">
+          <div class="paid-label">&#10003; Paid</div>
+          <div class="paid-detail">Paid on ${inv.paidDate} via ${inv.paymentMethod}</div>
+        </div>
+        <a href="#" class="btn btn-secondary" style="width:100%">Download receipt</a>
+      `;
+    } else if (inv.status === 'processing') {
+      actionHTML = `
+        <div class="processing-banner">
+          <div class="proc-label"><span class="spinner"></span> Payment processing</div>
+          <div class="proc-sub">Expected to settle in 1-2 business days</div>
+        </div>
+      `;
+    } else if (inv.status === 'draft') {
+      actionHTML = `
+        <a href="#" class="btn btn-secondary" style="width:100%;margin-bottom:10px">Edit draft</a>
+        <a href="#" class="btn btn-primary" style="width:100%">Submit for approval</a>
+      `;
+    } else {
+      actionHTML = `
+        <a href="/payrun" class="btn btn-secondary" style="width:100%;margin-bottom:10px">Schedule payment</a>
+        <a href="/payrun" class="btn btn-primary" style="width:100%">Pay now</a>
+      `;
+    }
+
+    // Notes
+    const notesHTML = inv.notes
+      ? `<div class="notes-card"><div class="label">Notes</div><div class="body">${inv.notes}</div></div>`
+      : '';
+
+    document.getElementById('mainContent').innerHTML = `
+      <a class="back-link" href="/invoices">&larr; Back to invoices</a>
+
+      <div class="detail-grid">
+        <div class="left-col">
+          <div class="hero-section">
+            <div class="hero-amount">${fmt(inv.amount)}</div>
+            <div class="hero-meta">
+              ${statusPill(inv.status)}
+              <span class="hero-meta .inv-num" style="font-size:14px;color:var(--ink2);font-weight:500">${inv.number}</span>
+            </div>
+          </div>
+
+          <div class="supplier-row">
+            <div class="avatar avatar-lg" style="background:${inv.supplierColor}">${inv.supplierInitial}</div>
+            <div class="info">
+              <div class="name">${inv.supplierName}</div>
+              <div class="sub">${inv.category}${supplier.city ? ' &middot; ' + supplier.city : ''}</div>
+            </div>
+            <a class="view-link" href="/supplier-detail?id=${inv.supplierId}">View supplier &rarr;</a>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="label">Invoice #</div>
+              <div class="value">${inv.number}</div>
+            </div>
+            <div class="meta-item">
+              <div class="label">PO #</div>
+              <div class="value">${inv.poNumber || '&mdash;'}</div>
+            </div>
+            <div class="meta-item">
+              <div class="label">Issued</div>
+              <div class="value">${inv.issued} 2026</div>
+            </div>
+            <div class="meta-item">
+              <div class="label">Terms</div>
+              <div class="value">${inv.terms}</div>
+            </div>
+          </div>
+
+          <div class="line-items-card">
+            <div class="card-head">Line items</div>
+            <table class="li-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="col-qty">Qty</th>
+                  <th class="col-unit">Unit price</th>
+                  <th style="text-align:right">Total</th>
+                </tr>
+              </thead>
+              <tbody>${lineItemsHTML}</tbody>
+            </table>
+            <div class="totals-section">
+              <div class="total-row">
+                <span class="t-label">Subtotal</span>
+                <span class="t-value">${fmt(inv.subtotal)}</span>
+              </div>
+              <div class="total-row">
+                <span class="t-label">Tax (${(inv.taxRate * 100).toFixed(0)}%)</span>
+                <span class="t-value">${fmt(inv.tax)}</span>
+              </div>
+              <div class="total-row grand">
+                <span class="t-label">Total</span>
+                <span class="t-value">${fmt(inv.amount)}</span>
+              </div>
+            </div>
+          </div>
+
+          ${notesHTML}
+        </div>
+
+        <div class="right-col">
+          <div class="panel">
+            <div class="panel-head">Timeline</div>
+            <div class="timeline">${timelineHTML}</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">Payment info</div>
+            ${payInfoHTML}
+          </div>
+
+          <div class="panel action-panel">
+            <div class="panel-head">Actions</div>
+            ${actionHTML}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+</script>
+</body>
+</html>

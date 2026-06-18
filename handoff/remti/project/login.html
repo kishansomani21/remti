@@ -103,19 +103,18 @@
     </div>
     <div class="divider">or with email</div>
 
-    <div id="auth-error" style="display:none;background:var(--danger-soft);color:var(--danger);padding:12px 16px;border-radius:var(--r-md);font-size:13px;font-weight:500;margin-bottom:14px"></div>
-    <form id="auth-form">
+    <form id="auth-form" onsubmit="event.preventDefault(); window.location.href='dashboard.html'">
       <div class="field" id="name-field" style="display:none">
         <label>Full name</label>
-        <input type="text" id="input-name" placeholder="Jordan Morgan"/>
+        <input type="text" placeholder="Jordan Morgan"/>
       </div>
       <div class="field">
         <label>Work email</label>
-        <input type="email" id="input-email" placeholder="jordan@yourcompany.co.uk" value="jordan@harbert.co.uk" required/>
+        <input type="email" placeholder="jordan@yourcompany.co.uk" value="jordan@harbert.co.uk" required/>
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="input-password" placeholder="••••••••••" value="demo1234" required/>
+        <input type="password" placeholder="••••••••••" value="••••••••••" required/>
       </div>
       <div class="meta-row" id="login-meta">
         <label style="display:flex;gap:8px;align-items:center;color:var(--ink2)"><input type="checkbox" checked style="accent-color:var(--ink)"/> Keep me signed in</label>
@@ -154,54 +153,15 @@
 
 <script>
   const params = new URLSearchParams(location.search);
-  let currentMode = 'login';
-
   function setMode(m){
-    currentMode = m;
     document.querySelectorAll('.auth-tabs .t').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
     document.getElementById('name-field').style.display = m === 'signup' ? '' : 'none';
     document.getElementById('login-meta').style.display = m === 'signup' ? 'none' : '';
     document.getElementById('auth-title').textContent = m === 'signup' ? 'Start paying suppliers.' : 'Welcome back.';
     document.getElementById('auth-sub').textContent = m === 'signup' ? '14 days free. No card. Your bank, your money.' : 'Pick up where you left off. Your next supplier run is waiting.';
     document.getElementById('auth-submit').textContent = m === 'signup' ? 'Create account →' : 'Log in →';
-    document.getElementById('auth-error').style.display = 'none';
   }
   if (params.get('signup')) setMode('signup');
   document.querySelectorAll('.auth-tabs .t').forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
-
-  document.getElementById('auth-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('auth-submit');
-    const errEl = document.getElementById('auth-error');
-    errEl.style.display = 'none';
-    btn.disabled = true;
-    btn.textContent = currentMode === 'signup' ? 'Creating account…' : 'Logging in…';
-
-    const body = {
-      email: document.getElementById('input-email').value,
-      password: document.getElementById('input-password').value,
-    };
-    if (currentMode === 'signup') body.name = document.getElementById('input-name').value;
-
-    try {
-      const res = await fetch(currentMode === 'signup' ? '/api/signup' : '/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        window.location.href = '/dashboard';
-      } else {
-        errEl.textContent = data.error || 'Something went wrong';
-        errEl.style.display = 'block';
-      }
-    } catch (err) {
-      errEl.textContent = 'Connection failed. Is the server running?';
-      errEl.style.display = 'block';
-    }
-    btn.disabled = false;
-    btn.textContent = currentMode === 'signup' ? 'Create account →' : 'Log in →';
-  });
 </script>
 </body></html>

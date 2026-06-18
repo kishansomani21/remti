@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Settings — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+  .main { padding: 32px 40px; max-width: 840px; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap:16px; flex-wrap: wrap; }
+
+  /* Settings tabs */
+  .settings-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--hair); margin-bottom: 32px;
+  }
+  .settings-tab {
+    padding: 12px 20px; font-size: 14px; font-weight: 600; color: var(--ink3);
+    cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s, border-color .15s;
+  }
+  .settings-tab:hover { color: var(--ink2); }
+  .settings-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Form fields */
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink2); letter-spacing: 0.02em; }
+  .field input, .field select, .field textarea {
+    margin-top: 6px; width: 100%; padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md); font-size: 15px; color: var(--ink);
+    font-family: inherit; transition: border-color .15s, background .15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--ink); background: #fff; }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field input[readonly] { background: var(--bg-elev); color: var(--ink3); cursor: not-allowed; }
+
+  .form-section {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 28px; margin-bottom: 20px; box-shadow: var(--shadow-sm);
+  }
+  .form-section h3 { font-size: 16px; font-weight: 700; margin: 0 0 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* Team table */
+  .team-table { width: 100%; border-collapse: collapse; }
+  .team-table th {
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink3); padding: 10px 16px; border-bottom: 1px solid var(--hair);
+  }
+  .team-table td { padding: 14px 16px; border-bottom: 1px solid var(--hair); font-size: 14px; }
+  .team-table tr:last-child td { border: 0; }
+
+  /* Toggle switch */
+  .toggle-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid var(--hair);
+  }
+  .toggle-row:last-of-type { border: 0; }
+  .toggle-label { font-size: 14px; font-weight: 500; }
+  .toggle {
+    position: relative; width: 44px; height: 26px; cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0; background: var(--hair-strong); border-radius: 99px;
+    transition: background .2s;
+  }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+    background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    transition: transform .2s;
+  }
+  .toggle input:checked ~ .toggle-track { background: var(--positive); }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+  /* Radio group */
+  .radio-group { display: flex; gap: 16px; margin-top: 8px; }
+  .radio-item {
+    display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;
+  }
+  .radio-item input[type="radio"] {
+    width: 18px; height: 18px; margin: 0; accent-color: var(--ink);
+  }
+
+  /* Sessions table */
+  .session-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid var(--hair);
+  }
+  .session-row:last-child { border: 0; }
+  .session-info { font-size: 14px; }
+  .session-meta { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+  /* Danger zone */
+  .danger-zone {
+    background: var(--surface); border: 1px solid rgba(162,48,48,0.25); border-radius: var(--r-lg);
+    padding: 28px; margin-top: 20px;
+  }
+  .danger-zone h3 { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: var(--danger); }
+  .danger-zone p { font-size: 13px; color: var(--ink2); margin: 0 0 16px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100;
+    display: none; place-items: center; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: grid; }
+  .modal {
+    background: var(--surface); border-radius: var(--r-xl); padding: 32px;
+    width: 90%; max-width: 440px; box-shadow: var(--shadow-lift);
+    animation: rise .25s ease both;
+  }
+  .modal h3 { font-size: 18px; font-weight: 700; margin: 0 0 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: #fff; padding: 12px 24px; border-radius: var(--r-pill);
+    font-size: 14px; font-weight: 600; box-shadow: var(--shadow-lift);
+    transition: transform .3s ease; z-index: 200; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)" id="company-name">Harbert &amp; Co · Ltd</div>
+    <div class="sb-section">
+      <h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">14</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section">
+      <h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link active" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px" id="user-avatar">JM</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600" id="user-name">Jordan Morgan</div>
+        <div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <h1 class="h2" style="margin:0">Settings</h1>
+    </div>
+
+    <!-- Tabs -->
+    <div class="settings-tabs">
+      <div class="settings-tab active" onclick="switchTab('company')">Company</div>
+      <div class="settings-tab" onclick="switchTab('profile')">Profile</div>
+      <div class="settings-tab" onclick="switchTab('team')">Team</div>
+      <div class="settings-tab" onclick="switchTab('notifications')">Notifications</div>
+      <div class="settings-tab" onclick="switchTab('security')">Security</div>
+    </div>
+
+    <!-- COMPANY TAB -->
+    <div class="tab-content active" id="tab-company">
+      <div class="form-section">
+        <h3>Company details</h3>
+        <div class="form-row">
+          <div class="field">
+            <label>Company name</label>
+            <input type="text" value="Harbert & Co"/>
+          </div>
+          <div class="field">
+            <label>Company number</label>
+            <input type="text" value="12345678"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>VAT number</label>
+            <input type="text" value="GB 123 4567 89"/>
+          </div>
+          <div class="field">
+            <label>Industry</label>
+            <select>
+              <option selected>Manufacturing</option>
+              <option>Retail</option>
+              <option>Services</option>
+              <option>Construction</option>
+              <option>Hospitality</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Registered address</label>
+          <textarea>14 Park Square, Sheffield S1 2FG</textarea>
+        </div>
+        <button class="btn btn-primary" onclick="showToast('Company details saved')">Save changes</button>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div class="tab-content" id="tab-profile">
+      <div class="form-section">
+        <h3>Your profile</h3>
+        <div class="form-row">
+          <div class="field">
+            <label>Full name</label>
+            <input type="text" value="Jordan Morgan"/>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" value="jordan@harbert.co.uk"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <div style="margin-top:6px"><span class="pill pill-dark">Admin</span></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Change password</h3>
+        <div class="field">
+          <label>Current password</label>
+          <input type="password" placeholder="Enter current password"/>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>New password</label>
+            <input type="password" placeholder="Enter new password"/>
+          </div>
+          <div class="field">
+            <label>Confirm new password</label>
+            <input type="password" placeholder="Confirm new password"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="showToast('Profile updated')">Update profile</button>
+      </div>
+    </div>
+
+    <!-- TEAM TAB -->
+    <div class="tab-content" id="tab-team">
+      <div class="form-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h3 style="margin:0">Team members</h3>
+          <button class="btn btn-primary" onclick="openInviteModal()">Invite team member</button>
+        </div>
+        <table class="team-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:600">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="avatar avatar-sm" style="background:var(--sup-blue)">JM</div>
+                  Jordan Morgan
+                </div>
+              </td>
+              <td style="color:var(--ink2)">jordan@harbert.co.uk</td>
+              <td><span class="pill pill-dark">Admin</span></td>
+              <td><span class="pill pill-positive pill-dot">Active</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="avatar avatar-sm" style="background:var(--sup-purple)">EC</div>
+                  Elena Chen
+                </div>
+              </td>
+              <td style="color:var(--ink2)">elena@harbert.co.uk</td>
+              <td><span class="pill">Approver</span></td>
+              <td><span class="pill pill-positive pill-dot">Active</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="avatar avatar-sm" style="background:var(--sup-forest)">MW</div>
+                  Marcus Webb
+                </div>
+              </td>
+              <td style="color:var(--ink2)">marcus@harbert.co.uk</td>
+              <td><span class="pill">Viewer</span></td>
+              <td><span class="pill pill-positive pill-dot">Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS TAB -->
+    <div class="tab-content" id="tab-notifications">
+      <div class="form-section">
+        <h3>Email notifications</h3>
+        <div class="toggle-row">
+          <span class="toggle-label">Invoice received</span>
+          <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Approval required</span>
+          <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Payment completed</span>
+          <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Payment failed</span>
+          <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Weekly summary</span>
+          <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Supplier added</span>
+          <label class="toggle"><input type="checkbox"/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Email digest frequency</h3>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="digest" value="daily"/> Daily
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="digest" value="weekly" checked/> Weekly
+          </label>
+        </div>
+        <div style="margin-top:20px">
+          <button class="btn btn-primary" onclick="showToast('Notification preferences saved')">Save preferences</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECURITY TAB -->
+    <div class="tab-content" id="tab-security">
+      <div class="form-section">
+        <h3>Two-factor authentication</h3>
+        <div class="toggle-row" style="border:0">
+          <div>
+            <span class="toggle-label">Enable 2FA</span>
+            <div style="font-size:12px;color:var(--ink3);margin-top:2px">Add an extra layer of security to your account</div>
+          </div>
+          <label class="toggle"><input type="checkbox"/><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Active sessions</h3>
+        <div class="session-row">
+          <div>
+            <div class="session-info" style="font-weight:600">Chrome &middot; macOS</div>
+            <div class="session-meta">192.168.1.42 &middot; Active now</div>
+          </div>
+          <span class="pill pill-positive pill-dot">Current</span>
+        </div>
+        <div class="session-row">
+          <div>
+            <div class="session-info">Safari &middot; iPhone</div>
+            <div class="session-meta">10.0.0.15 &middot; 2 hours ago</div>
+          </div>
+          <button class="btn btn-ghost" style="color:var(--danger);font-size:13px" onclick="showToast('Session revoked')">Revoke</button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>API keys</h3>
+        <p style="font-size:13px;color:var(--ink2);margin:0 0 16px">Generate keys to access the Remti API programmatically.</p>
+        <button class="btn btn-secondary" onclick="showToast('API key generated and copied to clipboard')">Generate new key</button>
+      </div>
+
+      <div class="danger-zone">
+        <h3>Danger zone</h3>
+        <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
+        <button class="btn btn-danger" onclick="confirmDelete()">Delete account</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Invite modal -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal">
+    <h3>Invite team member</h3>
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="invite-email" placeholder="colleague@company.co.uk"/>
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select id="invite-role">
+        <option>Viewer</option>
+        <option>Approver</option>
+        <option>Admin</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="sendInvite()">Send invite</button>
+      <button class="btn btn-secondary" onclick="closeInviteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <h3 style="color:var(--danger)">Delete account?</h3>
+    <p style="font-size:14px;color:var(--ink2);margin:0 0 24px;line-height:1.5">This will permanently delete your company account, all invoices, supplier data, and payment history. This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" style="flex:1" onclick="closeDeleteModal(); showToast('Account deletion cancelled')">Yes, delete everything</button>
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function openInviteModal() {
+  document.getElementById('invite-modal').classList.add('open');
+}
+function closeInviteModal() {
+  document.getElementById('invite-modal').classList.remove('open');
+}
+function sendInvite() {
+  const email = document.getElementById('invite-email').value;
+  if (email) {
+    closeInviteModal();
+    showToast('Invite sent to ' + email);
+    document.getElementById('invite-email').value = '';
+  }
+}
+
+function confirmDelete() {
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>

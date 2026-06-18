@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Remti — Pay every supplier in one tap</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* Home-specific */
+  .hero {
+    position: relative;
+    padding: 72px 0 56px;
+    overflow: hidden;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 64px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  @media (max-width: 980px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
+
+  .hero .eyebrow-row {
+    display: inline-flex; gap: 8px; align-items: center;
+    padding: 6px 10px 6px 8px;
+    background: var(--surface);
+    border: 1px solid var(--hair-strong);
+    border-radius: var(--r-pill);
+    font-size: 12px;
+    color: var(--ink2);
+    margin-bottom: 24px;
+  }
+  .hero .eyebrow-row .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--positive);
+    display: inline-grid; place-items: center;
+    color: #fff;
+  }
+  .hero h1 { font-size: clamp(44px, 6vw, 76px); letter-spacing: -0.03em; line-height: 1.02; font-weight: 700; margin: 0; }
+  .hero h1 em { font-style: normal; color: var(--sup-red); }
+  .hero p.lead {
+    margin-top: 20px;
+    font-size: 19px;
+    color: var(--ink2);
+    max-width: 560px;
+    line-height: 1.5;
+  }
+  .hero-cta { margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero-meta { margin-top: 36px; display: flex; gap: 24px; color: var(--ink3); font-size: 13px; align-items: center; flex-wrap: wrap; }
+  .hero-meta .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--ink3); }
+
+  /* Phone mock column */
+  .phone-stage {
+    position: relative;
+    min-height: 580px;
+    display: grid;
+    place-items: center;
+  }
+  .phone {
+    width: 300px;
+    background: #111;
+    border-radius: 48px;
+    padding: 10px;
+    box-shadow: 0 40px 80px -30px rgba(26,26,26,0.35), 0 4px 12px rgba(0,0,0,0.15);
+    position: relative;
+    z-index: 2;
+  }
+  .phone-screen {
+    background: var(--bg);
+    border-radius: 38px;
+    overflow: hidden;
+    aspect-ratio: 9/19.5;
+    position: relative;
+  }
+  .phone-notch {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 26px; background: #0c0c0c; border-radius: 20px;
+    z-index: 5;
+  }
+  .phone-status {
+    position: absolute; top: 16px; left: 0; right: 0;
+    display: flex; justify-content: space-between;
+    padding: 0 26px;
+    font-size: 11px; font-weight: 600;
+    color: var(--ink);
+    z-index: 4;
+  }
+  .phone-content {
+    padding: 54px 16px 16px;
+    font-size: 12px;
+  }
+
+  /* Floating accent cards */
+  .float-card {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-lg);
+    padding: 12px 14px;
+    box-shadow: var(--shadow-lift);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 3;
+  }
+  .float-card .num { font-size: 15px; font-weight: 700; }
+  .float-top-left { top: 10%; left: -8%; width: 230px; animation: rise .6s ease .3s both; }
+  .float-bottom-right { bottom: 12%; right: -10%; width: 240px; animation: rise .6s ease .5s both; }
+  @media (max-width: 980px) {
+    .float-top-left { left: 5%; }
+    .float-bottom-right { right: 5%; }
+  }
+
+  /* Logo row */
+  .logos {
+    margin-top: 56px;
+    padding-top: 32px;
+    border-top: 1px solid var(--hair);
+  }
+  .logos-label { color: var(--ink3); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; }
+  .logos-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 24px;
+    align-items: center;
+    color: var(--ink3);
+  }
+  .logo-ghost {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    opacity: 0.5;
+  }
+  .logo-ghost .dot { color: var(--sup-red); }
+  @media (max-width: 720px) { .logos-row { grid-template-columns: repeat(3, 1fr); gap: 20px 16px; } }
+
+  /* Metric strip */
+  .metrics {
+    background: var(--ink);
+    color: #fff;
+    border-radius: var(--r-xl);
+    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .metrics .m-value { font-size: 44px; font-weight: 700; letter-spacing: -0.03em; font-family: ui-rounded, -apple-system-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+  .metrics .m-label { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+  @media (max-width: 860px) { .metrics { grid-template-columns: 1fr 1fr; gap: 28px; padding: 28px; } .metrics .m-value { font-size: 34px; } }
+
+  /* Feature grid */
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-xl);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 280px;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card h3 { font-size: 22px; letter-spacing: -0.015em; font-weight: 600; margin: 0; }
+  .feature-card p { color: var(--ink2); margin: 0; font-size: 15px; line-height: 1.55; }
+  .feature-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--surface-alt);
+    display: grid; place-items: center;
+    color: var(--ink);
+  }
+  .feature-visual {
+    margin-top: auto;
+    background: var(--bg-elev);
+    border-radius: var(--r-md);
+    padding: 14px;
+    border: 1px solid var(--hair);
+  }
+
+  /* Tile row */
+  .scan-tiles {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  .scan-tile {
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-md);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .scan-tile .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--ink); color: #fff;
+    display: grid; place-items: center; font-size: 12px;
+  }
+  .scan-tile .title { font-size: 13px; font-weight: 600; }
+  .scan-tile .sub { font-size: 11px; color: var(--ink3); }
+
+  /* Approval row chips inside feature */
+  .approval-row {
+    display: flex; gap: 8px; align-items: center;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: 12px;
+    margin-bottom: 6px;
+  }
+  .approval-row:last-child { margin-bottom: 0; }
+  .approval-row .name { font-size: 12px; font-weight: 600; flex: 1; }
+  .approval-row .amt { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* How it works */
+  .steps {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-xl);
+    padding: 24px;
+    position: relative;
+  }
+  .step-num {
+    font-family: ui-rounded, -apple-system-rounded, system-ui, sans-serif;
+    font-size: 14px; font-weight: 700;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--ink); color: #fff;
+    display: grid; place-items: center;
+    margin-bottom: 16px;
+  }
+  .step h4 { font-size: 17px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .step p { color: var(--ink2); font-size: 14px; line-height: 1.5; margin: 0; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr 1fr; } }
+
+  /* Testimonial */
+  .quote-card {
+    background: var(--sup-red);
+    color: #fff;
+    border-radius: var(--r-xl);
+    padding: 56px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .quote-card blockquote {
+    font-size: clamp(22px, 2.6vw, 32px);
+    line-height: 1.25;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  .quote-card .attribution {
+    margin-top: 28px;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .quote-card .attribution .name { font-weight: 600; }
+  .quote-card .attribution .role { opacity: 0.75; font-size: 13px; }
+  .ledger-preview {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: var(--r-lg);
+    padding: 20px;
+    backdrop-filter: blur(12px);
+  }
+  .ledger-row {
+    display: flex; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.18);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ledger-row:last-child { border: 0; font-weight: 700; }
+  @media (max-width: 860px) { .quote-card { grid-template-columns: 1fr; padding: 32px; } }
+
+  /* CTA */
+  .cta-card {
+    background: var(--ink);
+    color: #fff;
+    border-radius: var(--r-xl);
+    padding: 64px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-card::before, .cta-card::after {
+    content: ""; position: absolute; border-radius: 50%; filter: blur(60px);
+  }
+  .cta-card::before { width: 400px; height: 400px; background: rgba(176,74,29,0.35); top: -150px; left: -100px; }
+  .cta-card::after { width: 300px; height: 300px; background: rgba(43,91,215,0.25); bottom: -100px; right: -60px; }
+  .cta-card > * { position: relative; z-index: 1; }
+  .cta-card h2 { font-size: clamp(32px, 4vw, 52px); font-weight: 700; letter-spacing: -0.025em; margin: 0; }
+  .cta-card p { color: rgba(255,255,255,0.7); margin: 16px auto 0; max-width: 520px; }
+  .cta-card .btn { margin-top: 28px; }
+  .cta-card .btn-primary { background: #fff; color: var(--ink); }
+  .cta-card .btn-primary:hover { background: #f4f3ee; }
+
+  /* Phone content mock — miniature of home screen */
+  .mock-greet { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .mock-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+  .mock-card {
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    padding: 12px;
+    margin-top: 10px;
+    position: relative;
+  }
+  .mock-card.overdue::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--danger); border-radius: 14px 0 0 14px;
+  }
+  .mock-card.accent::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--ink); border-radius: 14px 0 0 14px;
+  }
+  .mock-label { font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; color: var(--ink3); }
+  .mock-label.danger { color: var(--danger); }
+  .mock-amount { font-size: 18px; font-weight: 700; font-family: ui-rounded, -apple-system-rounded, system-ui, sans-serif; letter-spacing: -0.01em; }
+  .mock-amount-sm { font-size: 15px; font-weight: 700; font-family: ui-rounded, -apple-system-rounded, system-ui, sans-serif; }
+  .mock-pill {
+    font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
+    color: #fff;
+  }
+  .mock-btn {
+    font-size: 9px; font-weight: 600; padding: 4px 10px; border-radius: 8px;
+    background: var(--ink); color: #fff;
+  }
+  .mock-btn.danger { background: var(--danger); }
+  .mock-btn.white { background: var(--surface); color: var(--ink); border: 1px solid var(--hair); }
+  .mock-tile-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .mock-tile {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 8px; font-size: 9px;
+  }
+  .mock-tile .ic { width: 18px; height: 18px; background: var(--surface-alt); border-radius: 5px; display: grid; place-items: center; margin-bottom: 6px; font-size: 10px; }
+  .mock-tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(244,243,238,0.9);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--hair);
+    display: flex; justify-content: space-around; align-items: center;
+    padding-bottom: 10px;
+  }
+  .mock-tab { font-size: 8px; color: var(--ink3); text-align: center; }
+  .mock-tab.active { color: var(--ink); font-weight: 600; }
+  .mock-tab .d { width: 16px; height: 16px; margin: 0 auto 2px; background: currentColor; opacity: 0.7; mask-size: contain; border-radius: 3px; }
+  .mock-tab-camera {
+    width: 40px; height: 40px; background: var(--ink); border-radius: 50%;
+    display: grid; place-items: center; color: #fff; font-size: 14px;
+    margin-top: -16px; box-shadow: 0 6px 16px rgba(26,26,26,0.25);
+  }
+  .mock-supplier-row {
+    display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  }
+  .mock-supplier-row + .mock-supplier-row { border-top: 1px solid var(--hair); }
+
+  /* Icon primitive */
+  .icn { width: 16px; height: 16px; display: inline-block; color: currentColor; }
+
+  /* Supplier ticker */
+  .ticker-wrap {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .ticker {
+    display: flex; gap: 16px; width: max-content;
+    animation: marquee 40s linear infinite;
+  }
+  .ticker-item {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-pill);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .ticker-item .amt { color: var(--ink3); font-variant-numeric: tabular-nums; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="shell nav-inner">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">R</span>
+      Remti
+    </a>
+    <nav class="nav-links">
+      <a href="product.html">Product</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="security.html">Security</a>
+      <a href="about.html">About</a>
+      <a href="dashboard.html">Dashboard</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-ghost" href="login.html">Log in</a>
+      <a class="btn btn-primary" href="login.html?signup=1">Get started</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="sheen"></div>
+  <div class="shell hero-grid">
+    <div class="rise">
+      <div class="eyebrow-row">
+        <span class="dot">
+          <svg class="icn" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" width="10" height="10"><path d="M3 8.5l3 3 7-8"/></svg>
+        </span>
+        UK Open Banking ready · FCA authorised partner
+      </div>
+      <h1>
+        Pay every supplier.<br/>
+        <em>In one tap.</em>
+      </h1>
+      <p class="lead">
+        Remti is the supplier payments platform for UK businesses. Scan invoices, route approvals, and settle dozens of suppliers over Faster Payments — from the web or your phone.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="login.html?signup=1">Start free — 14 days</a>
+        <a class="btn btn-secondary btn-lg" href="product.html">See the product →</a>
+      </div>
+      <div class="hero-meta">
+        <span>No card required</span>
+        <span class="sep"></span>
+        <span>Settles in 1–2 hrs</span>
+        <span class="sep"></span>
+        <span>Xero &amp; QuickBooks sync</span>
+      </div>
+    </div>
+
+    <!-- Phone mock -->
+    <div class="phone-stage">
+      <!-- Floating card: overdue alert -->
+      <div class="float-card float-top-left">
+        <div class="avatar" style="background:var(--sup-crimson);width:36px;height:36px;font-size:14px">F</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700;color:var(--danger);letter-spacing:0.06em">OVERDUE · 15d</div>
+          <div style="font-size:13px;font-weight:600">Farrow Materials</div>
+        </div>
+        <div class="num">£12,150</div>
+      </div>
+
+      <!-- Floating card: payment sent -->
+      <div class="float-card float-bottom-right">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--positive-soft);color:var(--positive);display:grid;place-items:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700;color:var(--positive);letter-spacing:0.06em">PAID · Faster Payments</div>
+          <div style="font-size:13px;font-weight:600">Meridian Logistics</div>
+        </div>
+        <div class="num">£5,280</div>
+      </div>
+
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="phone-status">
+            <span>21:41</span>
+            <span>􀙇 ▪ 100%</span>
+          </div>
+          <div class="phone-content">
+            <p class="mock-greet">Monday</p>
+            <p class="mock-sub">April 20 · Good morning, Jordan</p>
+
+            <div class="mock-card overdue" style="padding-left:14px">
+              <div class="row-between">
+                <span class="mock-label danger">⚠ OVERDUE</span>
+              </div>
+              <div class="row-between" style="margin-top:4px">
+                <div>
+                  <div class="mock-amount">£20,570.00</div>
+                  <div style="font-size:9px;color:var(--ink3);margin-top:2px">2 invoices</div>
+                </div>
+                <span class="mock-btn danger">Pay now</span>
+              </div>
+              <div style="font-size:9px;color:var(--ink2);margin-top:8px">Redwood Packaging &amp; Farrow Materials</div>
+            </div>
+
+            <div class="mock-card accent" style="padding-left:14px">
+              <div class="row-between">
+                <span class="mock-label">NEXT UP · 7 days</span>
+              </div>
+              <div class="row-between" style="margin-top:4px">
+                <div>
+                  <div class="mock-amount-sm">£6,860.00</div>
+                  <div style="font-size:9px;color:var(--ink3);margin-top:2px">2 invoices · 2 suppliers</div>
+                </div>
+                <span class="mock-btn">Pay</span>
+              </div>
+              <div class="mock-supplier-row" style="margin-top:6px">
+                <div class="avatar avatar-sm" style="background:var(--sup-blue);width:18px;height:18px;font-size:9px">M</div>
+                <span style="flex:1;font-size:10px;font-weight:500">Meridian Logistics</span>
+                <span class="num" style="font-size:10px">£5,280</span>
+              </div>
+              <div class="mock-supplier-row">
+                <div class="avatar avatar-sm" style="background:var(--sup-green);width:18px;height:18px;font-size:9px">J</div>
+                <span style="flex:1;font-size:10px;font-weight:500">Juniper Cleaning</span>
+                <span class="num" style="font-size:10px">£1,580</span>
+              </div>
+            </div>
+
+            <div class="mock-tile-row">
+              <div class="mock-tile">
+                <div class="ic">􀌞</div>
+                <div style="font-weight:600">Scan</div>
+                <div style="color:var(--ink3);font-size:8.5px">Capture invoice</div>
+              </div>
+              <div class="mock-tile">
+                <div class="ic">⚡</div>
+                <div style="font-weight:600">Quick pay</div>
+                <div style="color:var(--ink3);font-size:8.5px">Send payment</div>
+              </div>
+              <div class="mock-tile">
+                <div class="ic">􀏅</div>
+                <div style="font-weight:600">Bulk pay</div>
+                <div style="color:var(--ink3);font-size:8.5px">Pay multiple</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mock-tab-bar">
+            <div class="mock-tab active"><div style="font-size:10px">⌂</div>Home</div>
+            <div class="mock-tab"><div style="font-size:10px">☰</div>Invoices</div>
+            <div class="mock-tab-camera">◉</div>
+            <div class="mock-tab"><div style="font-size:10px">👥</div>Suppliers</div>
+            <div class="mock-tab"><div style="font-size:10px">✓</div>Approvals</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supplier ticker -->
+  <div class="shell" style="margin-top:56px">
+    <div class="logos-label">Suppliers paid through Remti this week</div>
+    <div class="ticker-wrap">
+      <div class="ticker">
+        <!-- First set -->
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-red)">R</span> Redwood Packaging <span class="amt num">£8,420</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-blue)">M</span> Meridian Logistics <span class="amt num">£5,280</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-purple)">K</span> Kettle &amp; Hearth <span class="amt num">£3,420</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-green)">J</span> Juniper Cleaning <span class="amt num">£1,580</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-black)">B</span> Blackstone Printing <span class="amt num">£2,340</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-olive)">O</span> Olive &amp; Oak Linen <span class="amt num">£2,460</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-crimson)">F</span> Farrow Materials <span class="amt num">£12,150</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-slate)">N</span> Northgate Facilities <span class="amt num">£2,450</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-forest)">S</span> Summit Ingredients <span class="amt num">£7,890</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-rust)">A</span> Avalon Freight <span class="amt num">£4,760</span></div>
+        <!-- Duplicate -->
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-red)">R</span> Redwood Packaging <span class="amt num">£8,420</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-blue)">M</span> Meridian Logistics <span class="amt num">£5,280</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-purple)">K</span> Kettle &amp; Hearth <span class="amt num">£3,420</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-green)">J</span> Juniper Cleaning <span class="amt num">£1,580</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-black)">B</span> Blackstone Printing <span class="amt num">£2,340</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-olive)">O</span> Olive &amp; Oak Linen <span class="amt num">£2,460</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-crimson)">F</span> Farrow Materials <span class="amt num">£12,150</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-slate)">N</span> Northgate Facilities <span class="amt num">£2,450</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-forest)">S</span> Summit Ingredients <span class="amt num">£7,890</span></div>
+        <div class="ticker-item"><span class="avatar avatar-sm" style="background:var(--sup-rust)">A</span> Avalon Freight <span class="amt num">£4,760</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section style="padding-top: 32px">
+  <div class="shell">
+    <div class="metrics">
+      <div>
+        <div class="m-value">£412M</div>
+        <div class="m-label">Paid through Remti in 2025</div>
+      </div>
+      <div>
+        <div class="m-value">98%</div>
+        <div class="m-label">On-time payments</div>
+      </div>
+      <div>
+        <div class="m-value">4.9<span style="font-size:24px;opacity:0.6">/5</span></div>
+        <div class="m-label">App Store rating · 2,800 reviews</div>
+      </div>
+      <div>
+        <div class="m-value">11 hrs</div>
+        <div class="m-label">Saved per week on AP</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <div class="shell">
+    <div style="max-width:720px; margin-bottom:56px">
+      <div class="eyebrow" style="margin-bottom:12px">Everything your AP team needs</div>
+      <h2 class="h1">Supplier payments,<br/>start to settle.</h2>
+      <p class="muted" style="font-size:18px;margin-top:16px;max-width:580px">
+        Remti replaces the spreadsheet, the bank portal, and the approval email chain with one place your whole team can trust.
+      </p>
+    </div>
+
+    <div class="grid-3" style="gap:16px">
+      <!-- Feature 1: Scan -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/></svg>
+        </div>
+        <div>
+          <h3>Scan &amp; parse invoices</h3>
+          <p>Photograph, email, or upload. Our parser extracts supplier, line items, tax, and due date — with 99.2% accuracy on UK invoices.</p>
+        </div>
+        <div class="feature-visual">
+          <div class="row" style="gap:10px;margin-bottom:10px">
+            <div class="avatar avatar-sm" style="background:var(--sup-blue)">M</div>
+            <div style="flex:1;font-size:13px;font-weight:600">Meridian Logistics</div>
+            <span class="pill pill-positive" style="font-size:10px">✨ Parsed</span>
+          </div>
+          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;padding:4px 0"><span>Freight handling</span><span class="num">£1,680.00</span></div>
+          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;padding:4px 0"><span>Fuel surcharge</span><span class="num">£812.50</span></div>
+          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid var(--hair);margin-top:4px;padding-top:8px;font-weight:600;color:var(--ink)"><span>Total</span><span class="num">£2,847.50</span></div>
+        </div>
+      </div>
+
+      <!-- Feature 2: Bulk pay -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"/><rect x="3" y="15" width="18" height="5" rx="1"/><path d="M5 5h14"/></svg>
+        </div>
+        <div>
+          <h3>Pay 50 suppliers at once</h3>
+          <p>Select, schedule, confirm. Remti batches Faster Payments via Open Banking — no CSV uploads, no bank portal logins.</p>
+        </div>
+        <div class="feature-visual">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--ink3);margin-bottom:8px">SELECTED · 4 of 8</div>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px" class="num">£29,070.00</div>
+          <div class="approval-row"><div class="avatar avatar-sm" style="background:var(--sup-red)">R</div><span class="name">Redwood Packaging</span><span class="amt">£8,420</span><input type="checkbox" checked style="accent-color:var(--ink)"/></div>
+          <div class="approval-row"><div class="avatar avatar-sm" style="background:var(--sup-crimson)">F</div><span class="name">Farrow Materials</span><span class="amt">£12,150</span><input type="checkbox" checked style="accent-color:var(--ink)"/></div>
+          <div class="approval-row"><div class="avatar avatar-sm" style="background:var(--sup-blue)">M</div><span class="name">Meridian Logistics</span><span class="amt">£5,280</span><input type="checkbox" checked style="accent-color:var(--ink)"/></div>
+        </div>
+      </div>
+
+      <!-- Feature 3: Approvals -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 7-7"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+        </div>
+        <div>
+          <h3>Approvals, threaded.</h3>
+          <p>Set thresholds, route by category, and talk on the invoice — not in email. Managers approve in seconds from the web or mobile.</p>
+        </div>
+        <div class="feature-visual">
+          <div class="approval-row" style="background:var(--ink);border-color:var(--ink);color:#fff">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">3 invoices to review</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px" class="num">£16,950.00</div>
+            </div>
+            <span class="mock-btn white" style="font-size:10px">Review</span>
+          </div>
+          <div class="approval-row"><div class="avatar avatar-sm" style="background:var(--sup-crimson)">F</div><span class="name">Farrow Materials<br/><span style="font-weight:400;color:var(--warn);font-size:10px">15 days overdue</span></span><span class="pill pill-warn" style="font-size:9px">PENDING</span></div>
+          <div class="approval-row"><div class="avatar avatar-sm" style="background:var(--sup-black)">B</div><span class="name">Blackstone Printing<br/><span style="font-weight:400;color:var(--ink3);font-size:10px">29 days</span></span><span class="pill pill-warn" style="font-size:9px">PENDING</span></div>
+        </div>
+      </div>
+
+      <!-- Feature 4: Supplier ledger -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="10" r="2.5"/><path d="M15 20c0-2.2 1.3-4 4-4"/></svg>
+        </div>
+        <div>
+          <h3>A living supplier ledger</h3>
+          <p>Every supplier has a page: outstanding balance, YTD, on-time history, bank details, and the full invoice thread.</p>
+        </div>
+        <div class="feature-visual">
+          <div class="row" style="gap:12px;margin-bottom:12px">
+            <div class="avatar avatar-lg" style="background:var(--sup-rust)">A</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px">Avalon Freight Solutions</div>
+              <div style="font-size:11px;color:var(--ink3)">Logistics · Cardiff</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:8px;border-top:1px solid var(--hair)">
+            <div><div style="font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:0.06em">OUTSTANDING</div><div class="num" style="font-weight:700;font-size:13px;margin-top:2px">£9.6k</div></div>
+            <div><div style="font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:0.06em">PAID YTD</div><div class="num" style="font-weight:700;font-size:13px;margin-top:2px">£42.1k</div></div>
+            <div><div style="font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:0.06em">INVOICES</div><div class="num" style="font-weight:700;font-size:13px;margin-top:2px">10</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 5: Open banking -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8h14v-8"/><path d="M9 18v-5"/><path d="M12 18v-5"/><path d="M15 18v-5"/></svg>
+        </div>
+        <div>
+          <h3>Direct from your bank</h3>
+          <p>Pay from any major UK business account via Open Banking. Funds leave your account — we never touch them.</p>
+        </div>
+        <div class="feature-visual">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <div class="scan-tile" style="align-items:center;text-align:center;padding:10px 6px"><div class="placeholder" style="width:24px;height:24px;margin:0 auto">·</div><div style="font-size:10px;font-weight:600;margin-top:4px">Barclays</div></div>
+            <div class="scan-tile" style="align-items:center;text-align:center;padding:10px 6px"><div class="placeholder" style="width:24px;height:24px;margin:0 auto">·</div><div style="font-size:10px;font-weight:600;margin-top:4px">HSBC</div></div>
+            <div class="scan-tile" style="align-items:center;text-align:center;padding:10px 6px"><div class="placeholder" style="width:24px;height:24px;margin:0 auto">·</div><div style="font-size:10px;font-weight:600;margin-top:4px">Lloyds</div></div>
+            <div class="scan-tile" style="align-items:center;text-align:center;padding:10px 6px"><div class="placeholder" style="width:24px;height:24px;margin:0 auto">·</div><div style="font-size:10px;font-weight:600;margin-top:4px">NatWest</div></div>
+            <div class="scan-tile" style="align-items:center;text-align:center;padding:10px 6px"><div class="placeholder" style="width:24px;height:24px;margin:0 auto">·</div><div style="font-size:10px;font-weight:600;margin-top:4px">Monzo</div></div>
+            <div class="scan-tile" style="align-items:center;text-align:center;padding:10px 6px"><div class="placeholder" style="width:24px;height:24px;margin:0 auto">·</div><div style="font-size:10px;font-weight:600;margin-top:4px">Starling</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 6: Accounting sync -->
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5"/><path d="M20 12a8 8 0 0 1-14 5"/><path d="M14 7h4V3"/><path d="M10 17H6v4"/></svg>
+        </div>
+        <div>
+          <h3>Two-way accounting sync</h3>
+          <p>Bills flow into Xero, QuickBooks, or Sage the moment they're paid. Categories, VAT, and attachments come along for the ride.</p>
+        </div>
+        <div class="feature-visual">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="flex:1;background:var(--surface);border:1px solid var(--hair);border-radius:10px;padding:10px;text-align:center">
+              <div class="logo-mark" style="margin:0 auto 4px">R</div>
+              <div style="font-size:10px;font-weight:600">Remti</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;color:var(--ink3);gap:2px">
+              <div style="font-size:16px">↔</div>
+              <div style="font-size:8px;font-weight:700;letter-spacing:0.08em">SYNC</div>
+            </div>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--hair);border-radius:10px;padding:10px;text-align:center">
+              <div style="width:28px;height:28px;margin:0 auto 4px;background:var(--bg-elev);border-radius:8px;display:grid;place-items:center;font-weight:700;color:var(--ink2)">Xe</div>
+              <div style="font-size:10px;font-weight:600">Xero</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="background: var(--bg-elev); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair)">
+  <div class="shell">
+    <div class="row-between" style="margin-bottom:40px;align-items:flex-end;flex-wrap:wrap;gap:24px">
+      <div>
+        <div class="eyebrow" style="margin-bottom:12px">The flow</div>
+        <h2 class="h1">From invoice to settled<br/>in under two minutes.</h2>
+      </div>
+      <a class="btn btn-secondary" href="product.html">See every screen →</a>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Capture</h4>
+        <p>Snap the invoice, forward it to a dedicated inbox, or upload a batch.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Route</h4>
+        <p>Smart approvals send each bill to the right manager. Threads keep context on the invoice.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Pay</h4>
+        <p>Authorise once. Pay one supplier or fifty via Faster Payments — straight from your bank.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h4>Reconcile</h4>
+        <p>Remittances, receipts, and accounting sync happen automatically. No CSVs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section>
+  <div class="shell">
+    <div class="quote-card">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;opacity:0.7;margin-bottom:16px">CUSTOMER · HARBERT &amp; CO</div>
+        <blockquote>
+          "We used to spend Tuesday afternoons in the bank portal. Now our AP runs in fifteen minutes — and our suppliers are paid on time, every time."
+        </blockquote>
+        <div class="attribution">
+          <div class="avatar avatar-lg" style="background:rgba(255,255,255,0.18);color:#fff">DH</div>
+          <div>
+            <div class="name">Daniel Harbert</div>
+            <div class="role">Finance Director · 42-person manufacturer, Sheffield</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-preview">
+        <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;opacity:0.75;margin-bottom:12px">THIS WEEK</div>
+        <div class="ledger-row"><span>Suppliers paid</span><span class="num">27</span></div>
+        <div class="ledger-row"><span>Invoices settled</span><span class="num">41</span></div>
+        <div class="ledger-row"><span>Avg. time to pay</span><span class="num">2.4 days</span></div>
+        <div class="ledger-row"><span>Total</span><span class="num">£184,620</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding-top:32px">
+  <div class="shell">
+    <div class="cta-card">
+      <div class="eyebrow" style="color:rgba(255,255,255,0.55); margin-bottom:16px">Get started</div>
+      <h2>Your next supplier run<br/>could be 15 minutes away.</h2>
+      <p>Connect your bank, import your suppliers, and send your first batch — all before your tea's cold. Free for 14 days.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">
+        <a class="btn btn-primary btn-lg" href="login.html?signup=1">Start free</a>
+        <a class="btn btn-secondary btn-lg" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.25)" href="dashboard.html">Open the dashboard →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="shell">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="logo" href="index.html" style="margin-bottom:16px"><span class="logo-mark">R</span> Remti</a>
+        <p class="muted" style="font-size:13px;max-width:280px">Supplier payments for UK businesses. Built by operators for operators.</p>
+        <div class="row" style="margin-top:20px;gap:8px">
+          <span class="pill pill-positive pill-dot">All systems operational</span>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="product.html">Overview</a>
+        <a href="product.html#scan">Scan &amp; parse</a>
+        <a href="product.html#bulk">Bulk payments</a>
+        <a href="product.html#approvals">Approvals</a>
+        <a href="dashboard.html">Dashboard demo</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="about.html">About</a>
+        <a href="about.html#careers">Careers</a>
+        <a href="about.html#press">Press</a>
+        <a href="#">Changelog</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="pricing.html">Pricing</a>
+        <a href="security.html">Security</a>
+        <a href="#">Docs</a>
+        <a href="#">Support</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="security.html#compliance">Compliance</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 Remti Ltd · Registered in England &amp; Wales · FCA authorised EMI partner</div>
+      <div>Made in London</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

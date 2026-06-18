@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pay Run — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; font-weight: 500; color: var(--ink2); transition: background .12s, color .12s;
+  }
+  .sb-link:hover { background: var(--hair); color: var(--ink); }
+  .sb-link.active { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-sm); }
+  .sb-link .ic { width: 20px; text-align: center; font-size: 15px; }
+  .sb-link .count {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    background: var(--danger-soft); color: var(--danger); padding: 2px 7px; border-radius: var(--r-pill);
+  }
+  .sb-user {
+    margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px;
+    border-top: 1px solid var(--hair);
+  }
+
+  .main { padding: 32px 40px 64px; max-width: 1400px; width: 100%; }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+  .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+
+  /* Mode toggle */
+  .mode-toggle {
+    display: inline-flex; background: var(--surface); border: 1px solid var(--hair-strong);
+    border-radius: var(--r-md); overflow: hidden;
+  }
+  .mode-btn {
+    padding: 10px 24px; font-size: 14px; font-weight: 600; color: var(--ink3);
+    cursor: pointer; transition: all .15s; border: none; background: none;
+  }
+  .mode-btn.active { background: var(--ink); color: #fff; border-radius: var(--r-md); }
+  .mode-btn:not(.active):hover { color: var(--ink); background: var(--hair); }
+
+  /* Step indicator */
+  .step-bar {
+    display: flex; align-items: center; gap: 0; margin-bottom: 32px;
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 16px 24px; box-shadow: var(--shadow-sm);
+  }
+  .step-item {
+    display: flex; align-items: center; gap: 10px; flex: 1;
+  }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; font-weight: 700; border: 2px solid var(--hair-strong); color: var(--ink3);
+    flex-shrink: 0; transition: all .2s;
+  }
+  .step-item.active .step-num { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .step-item.done .step-num { background: var(--positive); color: #fff; border-color: var(--positive); }
+  .step-label { font-size: 13px; font-weight: 600; color: var(--ink3); transition: color .2s; }
+  .step-item.active .step-label { color: var(--ink); }
+  .step-item.done .step-label { color: var(--positive); }
+  .step-connector {
+    flex: 0 0 40px; height: 2px; background: var(--hair-strong); margin: 0 8px;
+  }
+  .step-connector.done { background: var(--positive); }
+
+  /* Panels */
+  .step-panel { display: none; animation: rise .4s ease both; }
+  .step-panel.visible { display: block; }
+
+  /* Quick Pay Step 1 */
+  .qp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .supplier-search {
+    padding: 10px 14px; border-radius: var(--r-md); border: 1px solid var(--hair-strong);
+    background: var(--surface); font-size: 13px; color: var(--ink); width: 100%;
+    font-family: inherit; outline: none; margin-bottom: 12px;
+  }
+  .supplier-search:focus { border-color: var(--ink); }
+  .supplier-list { max-height: 480px; overflow-y: auto; }
+  .sup-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    border-radius: var(--r-md); cursor: pointer; transition: background .12s; border-bottom: 1px solid var(--hair);
+  }
+  .sup-row:hover { background: var(--hair); }
+  .sup-row.selected { background: var(--accent-soft); border-color: var(--ink); }
+  .sup-row .avatar { flex-shrink: 0; }
+  .sup-info { flex: 1; min-width: 0; }
+  .sup-name { font-size: 14px; font-weight: 600; }
+  .sup-cat { font-size: 12px; color: var(--ink3); }
+  .sup-owed { font-size: 14px; font-weight: 700; text-align: right; flex-shrink: 0; }
+
+  /* Invoice list */
+  .inv-list-placeholder { color: var(--ink3); font-size: 14px; text-align: center; padding: 60px 20px; }
+  .inv-select-row {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    border-bottom: 1px solid var(--hair); cursor: pointer; border-radius: var(--r-md);
+    transition: background .12s;
+  }
+  .inv-select-row:hover { background: var(--hair); }
+  .inv-select-row.selected { background: var(--accent-soft); }
+  .inv-select-info { flex: 1; }
+  .inv-select-num { font-size: 13px; font-weight: 600; }
+  .inv-select-desc { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+  .inv-select-right { text-align: right; flex-shrink: 0; }
+  .inv-select-amount { font-size: 14px; font-weight: 700; }
+  .inv-select-due { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  .custom-amount-wrap {
+    padding: 16px; border-top: 1px solid var(--hair); margin-top: 8px;
+  }
+  .custom-amount-input {
+    padding: 10px 14px; border-radius: var(--r-md); border: 1px solid var(--hair-strong);
+    background: var(--surface); font-size: 15px; font-weight: 600; color: var(--ink); width: 100%;
+    font-family: inherit; outline: none;
+  }
+  .custom-amount-input:focus { border-color: var(--ink); }
+
+  /* Step 2 confirm */
+  .confirm-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; }
+  .summary-card { padding: 28px; }
+  .summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--hair);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { font-size: 13px; color: var(--ink3); font-weight: 500; }
+  .summary-value { font-size: 14px; font-weight: 600; }
+  .amount-large { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+
+  .bank-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .bank-card {
+    padding: 16px; border-radius: var(--r-md); border: 2px solid var(--hair);
+    cursor: pointer; transition: all .15s; background: var(--surface);
+  }
+  .bank-card:hover { border-color: var(--ink3); }
+  .bank-card.selected { border-color: var(--ink); background: var(--accent-soft); }
+  .bank-card-name { font-size: 13px; font-weight: 700; }
+  .bank-card-label { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+  .bank-card-balance { font-size: 15px; font-weight: 700; margin-top: 8px; }
+
+  .detail-card { padding: 28px; }
+  .detail-row {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    border-bottom: 1px solid var(--hair); font-size: 13px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--ink3); }
+  .detail-value { font-weight: 600; }
+
+  .finexer-badge {
+    display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+    background: var(--bg); border-radius: var(--r-md); margin-top: 16px;
+    font-size: 12px; color: var(--ink3); border: 1px solid var(--hair);
+  }
+  .finexer-badge .lock { font-size: 14px; }
+
+  /* Success */
+  .success-wrap { text-align: center; padding: 60px 20px; max-width: 560px; margin: 0 auto; }
+  .success-check {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--positive-soft);
+    display: grid; place-items: center; margin: 0 auto 24px;
+    animation: scaleIn .4s ease both;
+  }
+  .success-check svg { width: 40px; height: 40px; color: var(--positive); }
+  @keyframes scaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--ink3); margin-bottom: 32px; }
+  .success-details { text-align: left; margin-bottom: 32px; }
+  .success-actions { display: flex; gap: 12px; justify-content: center; }
+
+  /* Bulk Pay Step 1 */
+  .filter-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--hair); margin-bottom: 0;
+  }
+  .filter-tab {
+    padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--ink3); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; background: none; border-top: 0; border-left: 0; border-right: 0;
+  }
+  .filter-tab:hover { color: var(--ink2); }
+  .filter-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .bulk-table { width: 100%; border-collapse: collapse; }
+  .bulk-table th {
+    text-align: left; font-size: 11px; font-weight: 700; color: var(--ink3);
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px;
+    border-bottom: 1px solid var(--hair-strong);
+  }
+  .bulk-table th:last-child, .bulk-table td:last-child { text-align: right; }
+  .bulk-table td {
+    padding: 14px; border-bottom: 1px solid var(--hair); font-size: 13px; vertical-align: middle;
+  }
+  .bulk-table tr:hover td { background: rgba(26,26,26,0.02); }
+  .bulk-table .cb { width: 18px; height: 18px; accent-color: var(--ink); cursor: pointer; }
+  .bulk-table .supplier-cell { display: flex; align-items: center; gap: 10px; }
+  .bulk-table .amount-cell { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .group-subtotal td {
+    background: var(--bg-elev); font-weight: 600; font-size: 12px; color: var(--ink2);
+    border-bottom: 2px solid var(--hair-strong);
+  }
+
+  .bulk-footer {
+    position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--hair-strong);
+    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 -4px 16px rgba(26,26,26,0.06); border-radius: 0 0 var(--r-lg) var(--r-lg);
+    margin-top: -1px;
+  }
+  .bulk-summary { font-size: 14px; color: var(--ink2); }
+  .bulk-summary strong { color: var(--ink); font-weight: 700; }
+
+  /* Bulk Step 2 review */
+  .review-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; }
+  .batch-summary-card { padding: 24px; margin-bottom: 20px; }
+  .batch-stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .batch-stat { text-align: center; }
+  .batch-stat-value { font-size: 24px; font-weight: 700; }
+  .batch-stat-label { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+  .supplier-panel {
+    border: 1px solid var(--hair); border-radius: var(--r-md); margin-bottom: 12px; overflow: hidden;
+  }
+  .supplier-panel-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    background: var(--bg-elev); cursor: pointer; transition: background .12s;
+  }
+  .supplier-panel-header:hover { background: var(--hair); }
+  .supplier-panel-body { padding: 0 18px 14px; }
+  .supplier-panel-inv {
+    display: flex; justify-content: space-between; padding: 8px 0;
+    border-bottom: 1px solid var(--hair); font-size: 13px;
+  }
+  .supplier-panel-inv:last-child { border-bottom: none; }
+  .sp-total { margin-left: auto; font-size: 15px; font-weight: 700; }
+  .sp-chevron { margin-left: 8px; font-size: 12px; color: var(--ink3); transition: transform .2s; }
+  .sp-chevron.open { transform: rotate(180deg); }
+
+  .confirm-pay-btn {
+    width: 100%; padding: 16px; font-size: 16px; font-weight: 700;
+    border-radius: var(--r-lg); margin-top: 16px;
+  }
+
+  /* Processing */
+  .processing-wrap { max-width: 640px; margin: 0 auto; padding: 40px 0; }
+  .progress-bar-wrap {
+    height: 8px; background: var(--hair); border-radius: 4px; overflow: hidden; margin-bottom: 24px;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--ink); border-radius: 4px; transition: width .4s ease;
+  }
+  .processing-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+  .processing-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .processing-row:last-child { border-bottom: none; }
+  .proc-status {
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+  .proc-status.waiting { background: var(--hair); color: var(--ink3); }
+  .proc-status.active { background: var(--warn-soft); color: var(--warn); }
+  .proc-status.done { background: var(--positive-soft); color: var(--positive); }
+  .proc-info { flex: 1; }
+  .proc-name { font-size: 14px; font-weight: 600; }
+  .proc-amount { font-size: 14px; font-weight: 700; text-align: right; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { animation: spin .8s linear infinite; display: inline-block; }
+
+  /* Batch success table */
+  .batch-result-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  .batch-result-table th {
+    text-align: left; font-size: 11px; font-weight: 700; color: var(--ink3);
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 14px;
+    border-bottom: 1px solid var(--hair-strong);
+  }
+  .batch-result-table th:last-child { text-align: center; }
+  .batch-result-table td { padding: 12px 14px; border-bottom: 1px solid var(--hair); font-size: 13px; }
+  .batch-result-table td:last-child { text-align: center; }
+
+  .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+
+  @media (max-width: 1100px) {
+    .qp-grid, .confirm-grid, .review-grid { grid-template-columns: 1fr; }
+    .bank-selector { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link active" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Pay run</div>
+      </div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setMode('quick')">Quick pay</button>
+        <button class="mode-btn" onclick="setMode('bulk')">Bulk pay</button>
+      </div>
+    </div>
+
+    <!-- Step bars -->
+    <div id="step-bar-quick" class="step-bar">
+      <div class="step-item active" data-step="1"><div class="step-num">1</div><div class="step-label">Select</div></div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="2"><div class="step-num">2</div><div class="step-label">Confirm</div></div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="3"><div class="step-num">3</div><div class="step-label">Done</div></div>
+    </div>
+    <div id="step-bar-bulk" class="step-bar" style="display:none">
+      <div class="step-item active" data-step="1"><div class="step-num">1</div><div class="step-label">Select invoices</div></div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="2"><div class="step-num">2</div><div class="step-label">Review</div></div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="3"><div class="step-num">3</div><div class="step-label">Processing</div></div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="4"><div class="step-num">4</div><div class="step-label">Done</div></div>
+    </div>
+
+    <!-- ==================== QUICK PAY ==================== -->
+    <div id="quick-flow">
+      <!-- Step 1: Select supplier + invoice -->
+      <div id="qp-step1" class="step-panel visible">
+        <div class="qp-grid">
+          <div class="card">
+            <div style="padding:18px 22px 0"><div style="font-size:15px;font-weight:700">Select supplier</div></div>
+            <div style="padding:12px 22px 0">
+              <input type="text" class="supplier-search" placeholder="Search suppliers..." oninput="filterSuppliers(this.value)"/>
+            </div>
+            <div class="supplier-list" id="supplier-list" style="padding:0 22px 16px"></div>
+          </div>
+          <div class="card">
+            <div style="padding:18px 22px 0"><div style="font-size:15px;font-weight:700">Select invoice</div></div>
+            <div id="invoice-list" style="padding:12px 22px 22px">
+              <div class="inv-list-placeholder">Select a supplier to see open invoices</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:20px;text-align:right">
+          <button class="btn btn-primary btn-lg" id="qp-continue-1" onclick="qpGoStep2()" disabled>Continue to confirm</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Confirm payment -->
+      <div id="qp-step2" class="step-panel">
+        <div class="confirm-grid">
+          <div>
+            <div class="card summary-card">
+              <div style="font-size:15px;font-weight:700;margin-bottom:20px">Payment summary</div>
+              <div style="margin-bottom:20px">
+                <div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">From</div>
+                <div class="bank-selector" id="qp-bank-selector"></div>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">To</span>
+                <span class="summary-value" id="qp-to-name">--</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Bank details</span>
+                <span class="summary-value" id="qp-bank-details">--</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Invoice</span>
+                <span class="summary-value" id="qp-inv-number">--</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Reference</span>
+                <span class="summary-value" id="qp-reference">--</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Method</span>
+                <span class="summary-value">Faster Payments &middot; Same day</span>
+              </div>
+              <div style="border-top:2px solid var(--hair-strong);padding-top:16px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:14px;font-weight:600;color:var(--ink3)">Amount</span>
+                <span class="amount-large num" id="qp-amount-display">--</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card detail-card">
+              <div style="font-size:15px;font-weight:700;margin-bottom:16px">Payment details</div>
+              <div class="detail-row"><span class="detail-label">Payment method</span><span class="detail-value">Bank Transfer</span></div>
+              <div class="detail-row"><span class="detail-label">Processing time</span><span class="detail-value">Instant (Faster Payments)</span></div>
+              <div class="detail-row"><span class="detail-label">Fee</span><span class="detail-value" style="color:var(--positive)">Free</span></div>
+              <div class="detail-row"><span class="detail-label">Exchange rate</span><span class="detail-value">N/A (GBP)</span></div>
+              <div class="finexer-badge">
+                <span class="lock">&#128274;</span>
+                <span>Powered by <strong>Finexer</strong> &middot; Open Banking</span>
+              </div>
+            </div>
+            <div style="margin-top:20px">
+              <button class="btn btn-primary confirm-pay-btn" onclick="qpGoStep3()">Confirm &amp; pay</button>
+              <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="qpBack(1)">Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div id="qp-step3" class="step-panel">
+        <div class="success-wrap">
+          <div class="success-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="success-title">Payment initiated</div>
+          <div class="success-sub">Your payment has been sent via Faster Payments and will arrive same day.</div>
+          <div class="success-details card card-pad" id="qp-success-details"></div>
+          <div class="success-actions" style="margin-top:24px">
+            <a href="/dashboard" class="btn btn-secondary">Back to dashboard</a>
+            <button class="btn btn-primary" onclick="resetQuick()">Make another payment</button>
+          </div>
+          <div class="finexer-badge" style="margin-top:24px;justify-content:center">
+            <span class="lock">&#128274;</span>
+            <span>Secured by <strong>Finexer</strong> &middot; Open Banking</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== BULK PAY ==================== -->
+    <div id="bulk-flow" style="display:none">
+      <!-- Step 1: Select invoices -->
+      <div id="bulk-step1" class="step-panel visible">
+        <div class="card" style="overflow:hidden">
+          <div class="filter-tabs" id="bulk-filter-tabs">
+            <button class="filter-tab active" onclick="bulkFilter('all',this)">All</button>
+            <button class="filter-tab" onclick="bulkFilter('overdue',this)">Overdue</button>
+            <button class="filter-tab" onclick="bulkFilter('week',this)">Due this week</button>
+            <button class="filter-tab" onclick="bulkFilter('month',this)">Due this month</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="bulk-table">
+              <thead>
+                <tr>
+                  <th style="width:40px"><input type="checkbox" class="cb" id="select-all" onchange="toggleAll(this.checked)"/></th>
+                  <th>Supplier</th>
+                  <th>Invoice #</th>
+                  <th>Description</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="bulk-table-body"></tbody>
+            </table>
+          </div>
+          <div class="bulk-footer" id="bulk-footer" style="display:none">
+            <div class="bulk-summary">
+              <strong id="bf-count">0 invoices</strong> &middot; <span id="bf-suppliers">0 suppliers</span> &middot; <strong class="num" id="bf-total">--</strong>
+            </div>
+            <button class="btn btn-primary" onclick="bulkGoStep2()">Continue to review &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Review & confirm -->
+      <div id="bulk-step2" class="step-panel">
+        <div class="review-grid">
+          <div>
+            <div class="card batch-summary-card">
+              <div style="font-size:15px;font-weight:700;margin-bottom:16px">Payment batch summary</div>
+              <div class="batch-stat-row">
+                <div class="batch-stat"><div class="batch-stat-value num" id="br-total">--</div><div class="batch-stat-label">Total amount</div></div>
+                <div class="batch-stat"><div class="batch-stat-value" id="br-count">0</div><div class="batch-stat-label">Invoices</div></div>
+                <div class="batch-stat"><div class="batch-stat-value" id="br-suppliers">0</div><div class="batch-stat-label">Suppliers</div></div>
+              </div>
+            </div>
+            <div id="supplier-panels"></div>
+          </div>
+          <div>
+            <div class="card card-pad">
+              <div style="font-size:15px;font-weight:700;margin-bottom:16px">Pay from</div>
+              <div class="bank-selector" id="bulk-bank-selector"></div>
+              <div class="detail-row" style="margin-top:12px"><span class="detail-label">Payment method</span><span class="detail-value">Bank Transfer (Faster Payments)</span></div>
+              <div class="detail-row"><span class="detail-label">Estimated processing</span><span class="detail-value">All payments by end of day</span></div>
+              <div class="finexer-badge">
+                <span class="lock">&#128274;</span>
+                <span>Powered by <strong>Finexer</strong> &middot; Open Banking</span>
+              </div>
+              <button class="btn btn-primary confirm-pay-btn" onclick="bulkGoStep3()">Confirm &amp; pay all</button>
+              <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="bulkBack(1)">Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Processing -->
+      <div id="bulk-step3" class="step-panel">
+        <div class="processing-wrap">
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="bulk-progress" style="width:0%"></div></div>
+          <div class="processing-title" id="processing-title">Processing payment 1 of X...</div>
+          <div id="processing-rows"></div>
+        </div>
+      </div>
+
+      <!-- Step 4: Success -->
+      <div id="bulk-step4" class="step-panel">
+        <div class="success-wrap" style="max-width:700px">
+          <div class="success-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="success-title">Batch payment complete</div>
+          <div class="success-sub" id="batch-ref">Batch reference: --</div>
+          <table class="batch-result-table" id="batch-result-table">
+            <thead><tr><th>Supplier</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody id="batch-result-body"></tbody>
+          </table>
+          <div class="success-actions">
+            <a href="/dashboard" class="btn btn-secondary">Back to dashboard</a>
+            <button class="btn btn-primary" onclick="downloadReceipt()">Download receipt</button>
+          </div>
+          <div class="finexer-badge" style="margin-top:24px;justify-content:center">
+            <span class="lock">&#128274;</span>
+            <span>Secured by <strong>Finexer</strong> &middot; Open Banking</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script>
+  // State
+  let mode = 'quick';
+  let qpStep = 1;
+  let bulkStep = 1;
+  let selectedSupplier = null;
+  let selectedInvoice = null;
+  let selectedCustomAmount = null;
+  let selectedBankIdx = 0;
+  let bulkSelected = new Set();
+
+  function logout() { window.location.href = '/login'; }
+
+  // Mode toggle
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase().includes(m)));
+    document.getElementById('quick-flow').style.display = m === 'quick' ? 'block' : 'none';
+    document.getElementById('bulk-flow').style.display = m === 'bulk' ? 'block' : 'none';
+    document.getElementById('step-bar-quick').style.display = m === 'quick' ? 'flex' : 'none';
+    document.getElementById('step-bar-bulk').style.display = m === 'bulk' ? 'flex' : 'none';
+    if (m === 'quick') resetQuick();
+    if (m === 'bulk') { bulkStep = 1; renderBulkStep(); renderBulkTable('all'); }
+  }
+
+  // ==================== QUICK PAY ====================
+  function renderSupplierList(filter) {
+    filter = filter || '';
+    const list = document.getElementById('supplier-list');
+    const filtered = DATA.suppliers.filter(function(s) {
+      return s.name.toLowerCase().indexOf(filter.toLowerCase()) !== -1 || s.category.toLowerCase().indexOf(filter.toLowerCase()) !== -1;
+    });
+    var html = '';
+    filtered.forEach(function(s) {
+      var openInvs = DATA.invoices.filter(function(i) { return i.supplierId === s.id && (i.status === 'overdue' || i.status === 'due' || i.status === 'draft'); });
+      var total = 0;
+      openInvs.forEach(function(i) { total += i.amount; });
+      if (total === 0) return;
+      html += '<div class="sup-row ' + (selectedSupplier && selectedSupplier.id === s.id ? 'selected' : '') + '" onclick="selectSupplier(\'' + s.id + '\')">'
+        + '<div class="avatar" style="background:' + s.color + '">' + s.initial + '</div>'
+        + '<div class="sup-info"><div class="sup-name">' + s.name + '</div><div class="sup-cat">' + s.category + ' &middot; ' + s.city + '</div></div>'
+        + '<div class="sup-owed num">' + fmt(total) + '</div>'
+        + '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function filterSuppliers(val) { renderSupplierList(val); }
+
+  function selectSupplier(id) {
+    selectedSupplier = DATA.suppliers.find(function(s) { return s.id === id; });
+    selectedInvoice = null;
+    selectedCustomAmount = null;
+    renderSupplierList();
+    renderInvoiceList();
+    updateQpContinue();
+  }
+
+  function renderInvoiceList() {
+    var el = document.getElementById('invoice-list');
+    if (!selectedSupplier) {
+      el.innerHTML = '<div class="inv-list-placeholder">Select a supplier to see open invoices</div>';
+      return;
+    }
+    var invs = DATA.invoices.filter(function(i) { return i.supplierId === selectedSupplier.id && (i.status === 'overdue' || i.status === 'due' || i.status === 'draft'); });
+    var html = '';
+    invs.forEach(function(inv) {
+      var statusClass = inv.status === 'overdue' ? 'pill-danger' : inv.status === 'draft' ? 'pill-warn' : '';
+      var dueText = inv.status === 'overdue' ? Math.abs(inv.daysUntilDue) + 'd overdue' : inv.daysUntilDue !== null ? 'Due in ' + inv.daysUntilDue + 'd' : inv.due;
+      html += '<div class="inv-select-row ' + (selectedInvoice && selectedInvoice.id === inv.id ? 'selected' : '') + '" onclick="selectInvoice(\'' + inv.id + '\')">'
+        + '<div class="inv-select-info"><div class="inv-select-num">' + inv.number + '</div><div class="inv-select-desc">' + inv.lineItems[0].desc + '</div></div>'
+        + '<div class="inv-select-right"><div class="inv-select-amount num">' + fmt(inv.amount) + '</div>'
+        + '<div class="inv-select-due"><span class="pill pill-dot ' + statusClass + '" style="font-size:10px">' + dueText + '</span></div></div></div>';
+    });
+    html += '<div class="custom-amount-wrap">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:6px">Or enter a custom amount</div>'
+      + '<input type="text" class="custom-amount-input" placeholder="e.g. 5,000.00" oninput="setCustomAmount(this.value)" id="custom-amount"/>'
+      + '</div>';
+    el.innerHTML = html;
+  }
+
+  function selectInvoice(id) {
+    selectedInvoice = DATA.invoices.find(function(i) { return i.id === id; });
+    selectedCustomAmount = null;
+    var ca = document.getElementById('custom-amount');
+    if (ca) ca.value = '';
+    renderInvoiceList();
+    updateQpContinue();
+  }
+
+  function setCustomAmount(val) {
+    var num = parseFloat(val.replace(/[^0-9.]/g, ''));
+    if (!isNaN(num) && num > 0) {
+      selectedCustomAmount = num;
+      selectedInvoice = null;
+      document.querySelectorAll('.inv-select-row').forEach(function(r) { r.classList.remove('selected'); });
+    } else {
+      selectedCustomAmount = null;
+    }
+    updateQpContinue();
+  }
+
+  function updateQpContinue() {
+    var btn = document.getElementById('qp-continue-1');
+    btn.disabled = !(selectedSupplier && (selectedInvoice || selectedCustomAmount));
+  }
+
+  function getPayAmount() {
+    return selectedInvoice ? selectedInvoice.amount : (selectedCustomAmount || 0);
+  }
+
+  function getPayRef() {
+    var d = new Date();
+    var ds = d.getFullYear().toString() + (d.getMonth()+1).toString().padStart(2,'0') + d.getDate().toString().padStart(2,'0');
+    return 'REM-' + ds + '-' + (Math.floor(Math.random()*900)+100);
+  }
+
+  function renderBankSelector(containerId, callbackName) {
+    var el = document.getElementById(containerId);
+    var html = '';
+    DATA.bankAccounts.forEach(function(b, i) {
+      html += '<div class="bank-card ' + (i === selectedBankIdx ? 'selected' : '') + '" onclick="' + callbackName + '(' + i + ')">'
+        + '<div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:' + b.color + '"></div><div class="bank-card-name">' + b.name + '</div></div>'
+        + '<div class="bank-card-label">' + b.label + ' &middot; ****' + b.last4 + '</div>'
+        + '<div class="bank-card-balance num">' + fmt(b.balance) + '</div></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function selectQpBank(i) { selectedBankIdx = i; renderBankSelector('qp-bank-selector', 'selectQpBank'); }
+  function selectBulkBank(i) { selectedBankIdx = i; renderBankSelector('bulk-bank-selector', 'selectBulkBank'); }
+
+  function qpGoStep2() {
+    if (!selectedSupplier || (!selectedInvoice && !selectedCustomAmount)) return;
+    qpStep = 2;
+    renderQpStep();
+    var ref = getPayRef();
+    document.getElementById('qp-to-name').textContent = selectedSupplier.name;
+    document.getElementById('qp-bank-details').textContent = selectedSupplier.sortCode.replace(/(\d{2})(\d{2})(\d{2})/, '$1-$2-$3') + ' / ****' + selectedSupplier.accountLast4;
+    document.getElementById('qp-inv-number').textContent = selectedInvoice ? selectedInvoice.number : 'Custom payment';
+    document.getElementById('qp-reference').textContent = ref;
+    document.getElementById('qp-amount-display').textContent = fmt(getPayAmount());
+    renderBankSelector('qp-bank-selector', 'selectQpBank');
+  }
+
+  function qpGoStep3() {
+    qpStep = 3;
+    renderQpStep();
+    var ref = document.getElementById('qp-reference').textContent;
+    document.getElementById('qp-success-details').innerHTML =
+      '<div class="summary-row"><span class="summary-label">Paid to</span><span class="summary-value">' + selectedSupplier.name + '</span></div>'
+      + '<div class="summary-row"><span class="summary-label">Amount</span><span class="summary-value num">' + fmt(getPayAmount()) + '</span></div>'
+      + '<div class="summary-row"><span class="summary-label">Reference</span><span class="summary-value">' + ref + '</span></div>'
+      + '<div class="summary-row"><span class="summary-label">From</span><span class="summary-value">' + DATA.bankAccounts[selectedBankIdx].name + ' ' + DATA.bankAccounts[selectedBankIdx].label + '</span></div>'
+      + '<div class="summary-row"><span class="summary-label">Method</span><span class="summary-value">Faster Payments</span></div>';
+  }
+
+  function qpBack(step) {
+    qpStep = step;
+    renderQpStep();
+  }
+
+  function renderQpStep() {
+    ['qp-step1','qp-step2','qp-step3'].forEach(function(id, i) {
+      document.getElementById(id).classList.toggle('visible', i + 1 === qpStep);
+    });
+    var bar = document.getElementById('step-bar-quick');
+    bar.querySelectorAll('.step-item').forEach(function(el, i) {
+      var s = i + 1;
+      el.classList.toggle('active', s === qpStep);
+      el.classList.toggle('done', s < qpStep);
+    });
+    bar.querySelectorAll('.step-connector').forEach(function(el, i) {
+      el.classList.toggle('done', i + 1 < qpStep);
+    });
+  }
+
+  function resetQuick() {
+    selectedSupplier = null;
+    selectedInvoice = null;
+    selectedCustomAmount = null;
+    selectedBankIdx = 0;
+    qpStep = 1;
+    renderQpStep();
+    renderSupplierList();
+    document.getElementById('invoice-list').innerHTML = '<div class="inv-list-placeholder">Select a supplier to see open invoices</div>';
+    updateQpContinue();
+  }
+
+  // ==================== BULK PAY ====================
+  function getPayableInvoices() {
+    return DATA.invoices.filter(function(i) { return i.status === 'overdue' || i.status === 'due'; });
+  }
+
+  function bulkFilter(type, tabEl) {
+    document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+    if (tabEl) tabEl.classList.add('active');
+    renderBulkTable(type);
+  }
+
+  function renderBulkTable(filter) {
+    var invs = getPayableInvoices();
+    if (filter === 'overdue') invs = invs.filter(function(i) { return i.status === 'overdue'; });
+    else if (filter === 'week') invs = invs.filter(function(i) { return i.daysUntilDue !== null && i.daysUntilDue <= 7 && i.daysUntilDue >= 0; });
+    else if (filter === 'month') invs = invs.filter(function(i) { return i.daysUntilDue !== null && i.daysUntilDue <= 30; });
+
+    // Group by supplier
+    var grouped = {};
+    invs.forEach(function(inv) {
+      if (!grouped[inv.supplierId]) grouped[inv.supplierId] = [];
+      grouped[inv.supplierId].push(inv);
+    });
+
+    var tbody = document.getElementById('bulk-table-body');
+    var html = '';
+    Object.keys(grouped).forEach(function(supId) {
+      var supInvs = grouped[supId];
+      var sup = DATA.suppliers.find(function(s) { return s.id === supId; });
+      supInvs.forEach(function(inv) {
+        var statusPill = inv.status === 'overdue'
+          ? '<span class="pill pill-dot pill-danger" style="font-size:10px">Overdue</span>'
+          : '<span class="pill pill-dot pill-positive" style="font-size:10px">Due in ' + inv.daysUntilDue + 'd</span>';
+        html += '<tr>'
+          + '<td><input type="checkbox" class="cb" value="' + inv.id + '" ' + (bulkSelected.has(inv.id) ? 'checked' : '') + ' onchange="toggleBulk(\'' + inv.id + '\', this.checked)"/></td>'
+          + '<td><div class="supplier-cell"><div class="avatar avatar-sm" style="background:' + inv.supplierColor + '">' + inv.supplierInitial + '</div>' + inv.supplierName + '</div></td>'
+          + '<td style="font-weight:600">' + inv.number + '</td>'
+          + '<td style="color:var(--ink2)">' + inv.lineItems[0].desc + '</td>'
+          + '<td>' + inv.due + '</td>'
+          + '<td>' + statusPill + '</td>'
+          + '<td class="amount-cell num">' + fmt(inv.amount) + '</td>'
+          + '</tr>';
+      });
+      var subtotal = 0;
+      supInvs.forEach(function(i) { subtotal += i.amount; });
+      html += '<tr class="group-subtotal"><td></td><td colspan="5" style="text-align:right">' + sup.name + ' subtotal</td><td class="num" style="text-align:right">' + fmt(subtotal) + '</td></tr>';
+    });
+    tbody.innerHTML = html;
+    updateBulkFooter();
+  }
+
+  function toggleBulk(id, checked) {
+    if (checked) bulkSelected.add(id); else bulkSelected.delete(id);
+    updateBulkFooter();
+  }
+
+  function toggleAll(checked) {
+    document.querySelectorAll('.bulk-table .cb:not(#select-all)').forEach(function(cb) {
+      cb.checked = checked;
+      if (checked) bulkSelected.add(cb.value); else bulkSelected.delete(cb.value);
+    });
+    updateBulkFooter();
+  }
+
+  function updateBulkFooter() {
+    var invs = [];
+    bulkSelected.forEach(function(id) {
+      var inv = DATA.invoices.find(function(i) { return i.id === id; });
+      if (inv) invs.push(inv);
+    });
+    var footer = document.getElementById('bulk-footer');
+    if (invs.length === 0) { footer.style.display = 'none'; return; }
+    footer.style.display = 'flex';
+    var total = 0;
+    var supplierSet = {};
+    invs.forEach(function(i) { total += i.amount; supplierSet[i.supplierId] = true; });
+    var suppliers = Object.keys(supplierSet).length;
+    document.getElementById('bf-count').textContent = invs.length + ' invoice' + (invs.length !== 1 ? 's' : '');
+    document.getElementById('bf-suppliers').textContent = suppliers + ' supplier' + (suppliers !== 1 ? 's' : '');
+    document.getElementById('bf-total').textContent = fmt(total);
+  }
+
+  function bulkGoStep2() {
+    if (bulkSelected.size === 0) return;
+    bulkStep = 2;
+    renderBulkStep();
+    var invs = [];
+    bulkSelected.forEach(function(id) {
+      var inv = DATA.invoices.find(function(i) { return i.id === id; });
+      if (inv) invs.push(inv);
+    });
+    var total = 0;
+    var supplierSet = {};
+    invs.forEach(function(i) { total += i.amount; supplierSet[i.supplierId] = true; });
+    var supplierIds = Object.keys(supplierSet);
+
+    document.getElementById('br-total').textContent = fmt(total);
+    document.getElementById('br-count').textContent = invs.length;
+    document.getElementById('br-suppliers').textContent = supplierIds.length;
+
+    renderBankSelector('bulk-bank-selector', 'selectBulkBank');
+
+    // Supplier panels
+    var panels = document.getElementById('supplier-panels');
+    var panelHtml = '';
+    supplierIds.forEach(function(supId) {
+      var sup = DATA.suppliers.find(function(s) { return s.id === supId; });
+      var supInvs = invs.filter(function(i) { return i.supplierId === supId; });
+      var subtotal = 0;
+      supInvs.forEach(function(i) { subtotal += i.amount; });
+      panelHtml += '<div class="supplier-panel">'
+        + '<div class="supplier-panel-header" onclick="togglePanel(this)">'
+        + '<div class="avatar avatar-sm" style="background:' + sup.color + '">' + sup.initial + '</div>'
+        + '<div style="font-size:14px;font-weight:600;flex:1">' + sup.name + '</div>'
+        + '<div class="sp-total num">' + fmt(subtotal) + '</div>'
+        + '<span class="sp-chevron">&#9660;</span>'
+        + '</div><div class="supplier-panel-body">';
+      supInvs.forEach(function(inv) {
+        panelHtml += '<div class="supplier-panel-inv"><span>' + inv.number + ' &mdash; ' + inv.lineItems[0].desc + '</span><span class="num" style="font-weight:600">' + fmt(inv.amount) + '</span></div>';
+      });
+      panelHtml += '</div></div>';
+    });
+    panels.innerHTML = panelHtml;
+  }
+
+  function togglePanel(headerEl) {
+    var body = headerEl.nextElementSibling;
+    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+    headerEl.querySelector('.sp-chevron').classList.toggle('open');
+  }
+
+  function bulkGoStep3() {
+    bulkStep = 3;
+    renderBulkStep();
+    var invs = [];
+    bulkSelected.forEach(function(id) {
+      var inv = DATA.invoices.find(function(i) { return i.id === id; });
+      if (inv) invs.push(inv);
+    });
+    // Group by supplier
+    var grouped = {};
+    invs.forEach(function(inv) {
+      if (!grouped[inv.supplierId]) grouped[inv.supplierId] = { supplier: DATA.suppliers.find(function(s) { return s.id === inv.supplierId; }), invoices: [] };
+      grouped[inv.supplierId].invoices.push(inv);
+    });
+    var entries = Object.values(grouped);
+    var total = entries.length;
+
+    // Render rows
+    var rowsEl = document.getElementById('processing-rows');
+    var rowsHtml = '';
+    entries.forEach(function(e, i) {
+      var amt = 0;
+      e.invoices.forEach(function(inv) { amt += inv.amount; });
+      rowsHtml += '<div class="processing-row" id="proc-row-' + i + '">'
+        + '<div class="proc-status waiting" id="proc-status-' + i + '">&#8226;</div>'
+        + '<div class="proc-info"><div class="proc-name">' + e.supplier.name + '</div>'
+        + '<div style="font-size:11px;color:var(--ink3)">' + e.invoices.length + ' invoice' + (e.invoices.length !== 1 ? 's' : '') + '</div></div>'
+        + '<div class="proc-amount num">' + fmt(amt) + '</div></div>';
+    });
+    rowsEl.innerHTML = rowsHtml;
+
+    // Animate processing
+    var current = 0;
+    function processNext() {
+      if (current >= total) {
+        setTimeout(function() { bulkGoStep4(entries); }, 600);
+        return;
+      }
+      document.getElementById('processing-title').textContent = 'Processing payment ' + (current + 1) + ' of ' + total + '...';
+      document.getElementById('bulk-progress').style.width = ((current + 1) / total * 100) + '%';
+      var status = document.getElementById('proc-status-' + current);
+      status.className = 'proc-status active';
+      status.innerHTML = '<span class="spinner">&#8635;</span>';
+      var idx = current;
+      setTimeout(function() {
+        var s = document.getElementById('proc-status-' + idx);
+        s.className = 'proc-status done';
+        s.innerHTML = '&#10003;';
+        current++;
+        processNext();
+      }, 800 + Math.random() * 600);
+    }
+    processNext();
+  }
+
+  function bulkGoStep4(entries) {
+    bulkStep = 4;
+    renderBulkStep();
+    var ref = 'BATCH-' + getPayRef();
+    document.getElementById('batch-ref').textContent = 'Batch reference: ' + ref;
+    var tbody = document.getElementById('batch-result-body');
+    var html = '';
+    entries.forEach(function(e) {
+      var amt = 0;
+      e.invoices.forEach(function(inv) { amt += inv.amount; });
+      html += '<tr>'
+        + '<td><div style="display:flex;align-items:center;gap:8px"><div class="avatar avatar-sm" style="background:' + e.supplier.color + '">' + e.supplier.initial + '</div>' + e.supplier.name + '</div></td>'
+        + '<td class="num" style="font-weight:600">' + fmt(amt) + '</td>'
+        + '<td><span class="pill pill-dot pill-positive" style="font-size:10px">Paid</span></td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  function bulkBack(step) {
+    bulkStep = step;
+    renderBulkStep();
+  }
+
+  function renderBulkStep() {
+    ['bulk-step1','bulk-step2','bulk-step3','bulk-step4'].forEach(function(id, i) {
+      document.getElementById(id).classList.toggle('visible', i + 1 === bulkStep);
+    });
+    var bar = document.getElementById('step-bar-bulk');
+    bar.querySelectorAll('.step-item').forEach(function(el, i) {
+      var s = i + 1;
+      el.classList.toggle('active', s === bulkStep);
+      el.classList.toggle('done', s < bulkStep);
+    });
+    bar.querySelectorAll('.step-connector').forEach(function(el, i) {
+      el.classList.toggle('done', i + 1 < bulkStep);
+    });
+  }
+
+  function downloadReceipt() {
+    alert('Receipt downloaded (demo)');
+  }
+
+  // Init
+  renderSupplierList();
+</script>
+</body>
+</html>

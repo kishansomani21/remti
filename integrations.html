@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Integrations — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+  .main { padding: 32px 40px; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap:16px; flex-wrap: wrap; }
+
+  /* Integrations page */
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3); margin: 0 0 16px 0; }
+
+  .connected-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 24px; display: flex; align-items: center; gap: 20px; box-shadow: var(--shadow-sm);
+  }
+  @media (max-width: 720px) { .connected-card { flex-direction: column; align-items: flex-start; } }
+  .int-icon {
+    width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center;
+    font-size: 22px; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: -0.02em;
+  }
+  .connected-info { flex: 1; min-width: 0; }
+  .connected-info .name { font-size: 17px; font-weight: 700; }
+  .connected-info .meta { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+  .connected-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+  .int-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px;
+  }
+  @media (max-width: 1100px) { .int-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 720px) { .int-grid { grid-template-columns: 1fr; } }
+
+  .int-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s, border-color .15s;
+  }
+  .int-card:hover { box-shadow: var(--shadow-card); border-color: var(--hair-strong); }
+  .int-card-top { display: flex; align-items: center; gap: 14px; }
+  .int-card-top .int-icon { width: 44px; height: 44px; border-radius: 12px; font-size: 18px; }
+  .int-card-top .name { font-size: 15px; font-weight: 700; }
+  .int-card .desc { font-size: 13px; color: var(--ink2); line-height: 1.5; flex: 1; }
+  .int-card .btn { align-self: flex-start; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100;
+    display: none; place-items: center; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: grid; }
+  .modal {
+    background: var(--surface); border-radius: var(--r-xl); padding: 32px;
+    width: 90%; max-width: 400px; text-align: center; box-shadow: var(--shadow-lift);
+    animation: rise .25s ease both;
+  }
+  .modal h3 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+  .modal p { font-size: 14px; color: var(--ink2); margin: 0 0 24px; line-height: 1.5; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--hair-strong);
+    border-top-color: var(--ink); border-radius: 50%;
+    animation: spin .7s linear infinite; margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)" id="company-name">Harbert &amp; Co · Ltd</div>
+    <div class="sb-section">
+      <h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">14</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section">
+      <h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link active" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px" id="user-avatar">JM</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600" id="user-name">Jordan Morgan</div>
+        <div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="h2" style="margin:0">Integrations</h1>
+        <p style="font-size:14px;color:var(--ink2);margin:4px 0 0">Connect your accounting and business tools</p>
+      </div>
+    </div>
+
+    <!-- Connected -->
+    <div class="section-label">Connected</div>
+    <div class="connected-card" style="margin-bottom:40px">
+      <div class="int-icon" style="background:#13B5EA">X</div>
+      <div class="connected-info">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="name">Xero</span>
+          <span class="pill pill-positive pill-dot">Connected</span>
+        </div>
+        <div class="meta">Last synced <span id="xero-sync-time">2 mins ago</span> &middot; 4 invoices imported today</div>
+      </div>
+      <div class="connected-actions">
+        <button class="btn btn-secondary" id="sync-btn" onclick="syncXero()">Sync now</button>
+        <button class="btn btn-ghost" style="color:var(--danger)" onclick="disconnectXero()">Disconnect</button>
+      </div>
+    </div>
+
+    <!-- Available -->
+    <div class="section-label">Available</div>
+    <div class="int-grid">
+      <div class="int-card">
+        <div class="int-card-top">
+          <div class="int-icon" style="background:#2CA01C">Q</div>
+          <span class="name">QuickBooks</span>
+        </div>
+        <div class="desc">Sync invoices and payments with QuickBooks Online</div>
+        <button class="btn btn-secondary" onclick="connectApp('QuickBooks')">Connect</button>
+      </div>
+
+      <div class="int-card">
+        <div class="int-card-top">
+          <div class="int-icon" style="background:#00D639">S</div>
+          <span class="name">Sage</span>
+        </div>
+        <div class="desc">Import supplier bills from Sage 50 and Sage Business Cloud</div>
+        <button class="btn btn-secondary" onclick="connectApp('Sage')">Connect</button>
+      </div>
+
+      <div class="int-card">
+        <div class="int-card-top">
+          <div class="int-icon" style="background:#46C0E9">F</div>
+          <span class="name">FreeAgent</span>
+        </div>
+        <div class="desc">Sync expenses and supplier payments with FreeAgent</div>
+        <button class="btn btn-secondary" onclick="connectApp('FreeAgent')">Connect</button>
+      </div>
+
+      <div class="int-card">
+        <div class="int-card-top">
+          <div class="int-icon" style="background:#4A154B">S</div>
+          <span class="name">Slack</span>
+        </div>
+        <div class="desc">Get payment notifications and approval requests in Slack</div>
+        <button class="btn btn-secondary" onclick="connectApp('Slack')">Connect</button>
+      </div>
+
+      <div class="int-card">
+        <div class="int-card-top">
+          <div class="int-icon" style="background:#FF4A00">Z</div>
+          <span class="name">Zapier</span>
+        </div>
+        <div class="desc">Connect Remti to 5,000+ apps via Zapier</div>
+        <button class="btn btn-secondary" onclick="connectApp('Zapier')">Connect</button>
+      </div>
+
+      <div class="int-card">
+        <div class="int-card-top">
+          <div class="int-icon" style="background:#1A1A1A">&lt;/&gt;</div>
+          <span class="name">API</span>
+        </div>
+        <div class="desc">Build custom integrations with the Remti REST API</div>
+        <button class="btn btn-ghost" style="font-size:13px" onclick="window.open('#','_blank')">View docs &rarr;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Connect modal -->
+<div class="modal-overlay" id="connect-modal">
+  <div class="modal">
+    <div class="spinner" id="modal-spinner"></div>
+    <h3 id="modal-title">Connecting to QuickBooks...</h3>
+    <p id="modal-desc">You'll be redirected to QuickBooks to authorise access.</p>
+    <button class="btn btn-primary btn-lg" id="modal-continue" style="display:none;width:100%" onclick="closeModal()">Continue</button>
+    <button class="btn btn-ghost" style="margin-top:8px;font-size:13px" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+function syncXero() {
+  const btn = document.getElementById('sync-btn');
+  const timeEl = document.getElementById('xero-sync-time');
+  btn.textContent = 'Syncing...';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  setTimeout(() => {
+    btn.textContent = 'Sync now';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    timeEl.textContent = 'just now';
+  }, 1800);
+}
+
+function disconnectXero() {
+  if (confirm('Disconnect Xero? You can reconnect at any time.')) {
+    // Would call API to disconnect
+  }
+}
+
+function connectApp(name) {
+  const modal = document.getElementById('connect-modal');
+  const spinner = document.getElementById('modal-spinner');
+  const title = document.getElementById('modal-title');
+  const desc = document.getElementById('modal-desc');
+  const continueBtn = document.getElementById('modal-continue');
+
+  title.textContent = `Connecting to ${name}...`;
+  desc.textContent = `You'll be redirected to ${name} to authorise access.`;
+  spinner.style.display = 'block';
+  continueBtn.style.display = 'none';
+  modal.classList.add('open');
+
+  setTimeout(() => {
+    spinner.style.display = 'none';
+    continueBtn.style.display = 'block';
+  }, 1500);
+}
+
+function closeModal() {
+  document.getElementById('connect-modal').classList.remove('open');
+}
+
+// Close modal on overlay click
+document.getElementById('connect-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

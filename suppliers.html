@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Suppliers — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+
+  .main { padding: 32px 40px; max-width: 1280px; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+  .topbar-left .page-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .topbar-left .page-sub { font-size: 13px; color: var(--ink3); margin-top: 2px; }
+  .topbar-right { display: flex; gap: 10px; align-items: center; }
+  .topbar-right .search-input {
+    padding: 9px 14px 9px 36px; border: 1px solid var(--hair-strong); border-radius: var(--r-md);
+    background: var(--surface); font-size: 14px; font-family: inherit; color: var(--ink);
+    width: 260px; transition: border-color 0.15s;
+  }
+  .topbar-right .search-input:focus { outline: none; border-color: var(--ink); }
+  .topbar-right .search-input::placeholder { color: var(--ink4); }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink3); pointer-events: none; }
+
+  /* KPI strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 980px) { .kpi-strip { grid-template-columns: 1fr 1fr; } }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 20px; box-shadow: var(--shadow-sm);
+  }
+  .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .kpi-sub { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+  /* Table */
+  .table-panel { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--hair); display: flex; align-items: center; justify-content: space-between; }
+  .table-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink3); text-align: left;
+    border-bottom: 1px solid var(--hair); background: var(--bg);
+  }
+  thead th.r { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--hair); cursor: pointer; transition: background 0.12s; }
+  tbody tr:hover { background: var(--bg-elev); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td { padding: 14px 16px; font-size: 14px; vertical-align: middle; }
+  tbody td.r { text-align: right; }
+  .sup-cell { display: flex; align-items: center; gap: 12px; }
+  .sup-cell .sup-name { font-weight: 600; }
+  .outstanding-red { color: var(--danger); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .outstanding-green { color: var(--positive); font-weight: 600; font-size: 12px; }
+  .paid-ytd { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .inv-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+  .inv-badge .open-count {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
+    background: var(--warn-soft); color: var(--warn);
+  }
+  .terms-pill { font-size: 12px; color: var(--ink3); font-weight: 500; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+    display: none; place-items: center; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: grid; }
+  .modal {
+    background: var(--surface); border-radius: var(--r-xl); width: 520px; max-width: 92vw;
+    max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow-lift); padding: 32px;
+  }
+  .modal h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  .modal .modal-sub { font-size: 13px; color: var(--ink3); margin-bottom: 24px; }
+  .modal-steps { display: flex; gap: 8px; margin-bottom: 24px; }
+  .modal-steps .step {
+    flex: 1; height: 4px; border-radius: 2px; background: var(--hair);
+  }
+  .modal-steps .step.active { background: var(--ink); }
+  .modal-steps .step.done { background: var(--positive); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink2); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--hair-strong); border-radius: var(--r-md);
+    font-size: 14px; font-family: inherit; color: var(--ink); background: var(--surface);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--ink); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  .empty-state { padding: 48px 20px; text-align: center; color: var(--ink3); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link active" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">Suppliers</h1>
+        <div class="page-sub" id="pageSubtitle"></div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search suppliers..."/>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">Add supplier</button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="kpi-strip" id="kpiStrip"></div>
+
+    <!-- Table -->
+    <div class="table-panel">
+      <div class="table-header">
+        <h3>All suppliers</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Supplier</th>
+            <th>Category</th>
+            <th>City</th>
+            <th class="r">Outstanding</th>
+            <th class="r">Paid YTD</th>
+            <th>Invoices</th>
+            <th>Terms</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="supplierBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none">No suppliers match your search.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add supplier modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2>Add supplier</h2>
+    <div class="modal-sub" id="modalSub">Step 1 of 3 &mdash; Company details</div>
+    <div class="modal-steps">
+      <div class="step active" id="step1bar"></div>
+      <div class="step" id="step2bar"></div>
+      <div class="step" id="step3bar"></div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="step1">
+      <div class="field">
+        <label>Supplier name</label>
+        <input type="text" id="fName" placeholder="e.g. Redwood Packaging Co."/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Category</label>
+          <input type="text" id="fCategory" placeholder="e.g. Packaging"/>
+        </div>
+        <div class="field">
+          <label>City</label>
+          <input type="text" id="fCity" placeholder="e.g. Manchester"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="step2" style="display:none">
+      <div class="field">
+        <label>Contact name</label>
+        <input type="text" id="fContact" placeholder="e.g. Sarah Mitchell"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="fEmail" placeholder="e.g. sarah@redwoodpkg.co.uk"/>
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="fPhone" placeholder="e.g. 0161 496 0142"/>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="step3" style="display:none">
+      <div class="field">
+        <label>Bank name</label>
+        <input type="text" id="fBank" placeholder="e.g. Barclays"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Sort code</label>
+          <input type="text" id="fSort" placeholder="e.g. 20-01-00"/>
+        </div>
+        <div class="field">
+          <label>Account number</label>
+          <input type="text" id="fAccount" placeholder="e.g. 55779911"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Payment terms</label>
+        <select id="fTerms">
+          <option value="Net 15">Net 15</option>
+          <option value="Net 30" selected>Net 30</option>
+          <option value="Net 45">Net 45</option>
+          <option value="Net 60">Net 60</option>
+          <option value="Due on receipt">Due on receipt</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modalBack" onclick="prevStep()" style="display:none">Back</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalNext" onclick="nextStep()">Next</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function() {
+  const suppliers = DATA.suppliers;
+  const invoices = DATA.invoices;
+
+  // Compute KPIs
+  const totalSuppliers = suppliers.length;
+  const totalOutstanding = suppliers.reduce((s, sup) => s + sup.owed, 0);
+  const allAmounts = invoices.map(i => i.amount);
+  const avgInvoice = allAmounts.reduce((s, a) => s + a, 0) / allAmounts.length;
+  const activeThisMonth = suppliers.filter(s => s.owed > 0).length;
+
+  document.getElementById('pageSubtitle').textContent = totalSuppliers + ' suppliers · ' + activeThisMonth + ' active this month';
+
+  // Render KPIs
+  const kpis = [
+    { label: 'Total suppliers', value: totalSuppliers.toString(), sub: activeThisMonth + ' active this month' },
+    { label: 'Outstanding', value: fmt(totalOutstanding), sub: 'Across all suppliers' },
+    { label: 'Avg invoice', value: fmt(Math.round(avgInvoice * 100) / 100), sub: invoices.length + ' invoices total' },
+    { label: 'On-time rate', value: '94%', sub: 'Last 90 days' },
+  ];
+  document.getElementById('kpiStrip').innerHTML = kpis.map(k =>
+    '<div class="kpi-card"><div class="kpi-label">' + k.label + '</div><div class="kpi-value num">' + k.value + '</div><div class="kpi-sub">' + k.sub + '</div></div>'
+  ).join('');
+
+  // Render table
+  function renderTable(filter) {
+    const q = (filter || '').toLowerCase();
+    const filtered = suppliers.filter(s =>
+      !q || s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q) || s.city.toLowerCase().includes(q)
+    );
+    const tbody = document.getElementById('supplierBody');
+    const empty = document.getElementById('emptyState');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = filtered.map(s => {
+      const supInvoices = invoices.filter(i => i.supplierId === s.id);
+      const openCount = supInvoices.filter(i => i.status !== 'paid').length;
+
+      const owedHtml = s.owed > 0
+        ? '<span class="outstanding-red">' + fmt(s.owed) + '</span>'
+        : '<span class="outstanding-green">Paid up</span>';
+
+      const invHtml = '<span class="inv-badge">' + supInvoices.length + ' total'
+        + (openCount > 0 ? ' <span class="open-count">' + openCount + ' open</span>' : '')
+        + '</span>';
+
+      return '<tr onclick="window.location.href=\'/supplier-detail?id=' + s.id + '\'">'
+        + '<td><div class="sup-cell"><div class="avatar" style="background:' + s.color + '">' + s.initial + '</div><span class="sup-name">' + s.name + '</span></div></td>'
+        + '<td>' + s.category + '</td>'
+        + '<td>' + s.city + '</td>'
+        + '<td class="r">' + owedHtml + '</td>'
+        + '<td class="r"><span class="paid-ytd">' + fmt(s.paidYTD) + '</span></td>'
+        + '<td>' + invHtml + '</td>'
+        + '<td><span class="terms-pill">' + s.terms + '</span></td>'
+        + '<td><a class="btn btn-secondary btn-sm" href="/supplier-detail?id=' + s.id + '" onclick="event.stopPropagation()">View</a></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  renderTable('');
+
+  document.getElementById('searchInput').addEventListener('input', function() {
+    renderTable(this.value);
+  });
+
+  // Modal logic
+  window.currentStep = 1;
+
+  window.openModal = function() {
+    document.getElementById('modalOverlay').classList.add('open');
+    setStep(1);
+  };
+  window.closeModal = function() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    setStep(1);
+    // Clear fields
+    ['fName','fCategory','fCity','fContact','fEmail','fPhone','fBank','fSort','fAccount'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  };
+
+  function setStep(n) {
+    window.currentStep = n;
+    document.getElementById('step1').style.display = n === 1 ? '' : 'none';
+    document.getElementById('step2').style.display = n === 2 ? '' : 'none';
+    document.getElementById('step3').style.display = n === 3 ? '' : 'none';
+    document.getElementById('modalBack').style.display = n > 1 ? '' : 'none';
+    document.getElementById('modalNext').textContent = n === 3 ? 'Add supplier' : 'Next';
+
+    const subs = ['Step 1 of 3 — Company details', 'Step 2 of 3 — Contact information', 'Step 3 of 3 — Payment details'];
+    document.getElementById('modalSub').textContent = subs[n - 1];
+
+    for (let i = 1; i <= 3; i++) {
+      const bar = document.getElementById('step' + i + 'bar');
+      bar.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    }
+  }
+
+  window.nextStep = function() {
+    if (window.currentStep < 3) {
+      setStep(window.currentStep + 1);
+    } else {
+      // Submit — just close for demo
+      closeModal();
+    }
+  };
+  window.prevStep = function() {
+    if (window.currentStep > 1) setStep(window.currentStep - 1);
+  };
+})();
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+</script>
+</body>
+</html>

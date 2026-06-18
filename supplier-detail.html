@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Supplier — Remti</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  body { background: var(--bg); }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .sidebar { display:none; } }
+  .sidebar {
+    background: var(--bg); border-right: 1px solid var(--hair);
+    padding: 20px 16px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sb-section { margin-top: 24px; }
+  .sb-section h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin: 0 0 6px 10px; }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; color: var(--ink2); font-weight: 500;
+  }
+  .sb-link:hover { background: var(--bg-elev); color: var(--ink); }
+  .sb-link.active { background: var(--ink); color: #fff; }
+  .sb-link .count { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--surface-alt); color: var(--ink3); }
+  .sb-link.active .count { background: rgba(255,255,255,0.18); color: #fff; }
+  .sb-link .ic { width: 16px; height: 16px; display: grid; place-items: center; }
+  .sb-user { margin-top: auto; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; display:flex; gap:10px; align-items:center; }
+
+  .main { padding: 32px 40px; max-width: 1280px; }
+  @media (max-width: 980px) { .main { padding: 24px; } }
+
+  /* Back link */
+  .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink3); font-weight: 500; margin-bottom: 20px; transition: color 0.15s; }
+  .back-link:hover { color: var(--ink); }
+
+  /* Header */
+  .detail-header {
+    display: flex; align-items: center; gap: 20px; margin-bottom: 28px;
+  }
+  .detail-header .header-info { flex: 1; }
+  .detail-header .header-info h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .detail-header .header-meta { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+  .category-pill {
+    display: inline-flex; align-items: center; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; border-radius: var(--r-pill);
+    background: var(--surface-alt); color: var(--ink2); border: 1px solid var(--hair);
+  }
+
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 860px) { .stats-row { grid-template-columns: 1fr; } }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg);
+    padding: 20px; box-shadow: var(--shadow-sm);
+  }
+  .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .stat-value.danger { color: var(--danger); }
+  .stat-sub { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+  /* Two-column layout */
+  .content-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } }
+
+  /* Panels */
+  .panel { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--hair); display: flex; align-items: center; justify-content: space-between; }
+  .panel-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+  .panel-body { padding: 20px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; background: var(--bg-elev); padding: 3px; border-radius: var(--r-pill); }
+  .tabs .t { padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--ink3); border-radius: var(--r-pill); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .tabs .t:hover { color: var(--ink2); }
+  .tabs .t.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+  .tabs .t .tc { font-size: 10px; font-weight: 700; opacity: 0.5; margin-left: 3px; }
+
+  /* Invoice table */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink3); text-align: left;
+    border-bottom: 1px solid var(--hair); background: var(--bg);
+  }
+  thead th.r { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--hair); cursor: pointer; transition: background 0.12s; }
+  tbody tr:hover { background: var(--bg-elev); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+  tbody td.r { text-align: right; }
+  .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* Status pills */
+  .status-overdue { color: var(--danger); font-weight: 600; font-size: 12px; }
+  .status-due { color: var(--warn); font-weight: 600; font-size: 12px; }
+  .status-draft { color: var(--ink3); font-weight: 600; font-size: 12px; }
+  .status-processing { color: var(--sup-blue); font-weight: 600; font-size: 12px; }
+
+  /* Contact details */
+  .detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--hair); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .dl { font-size: 12px; color: var(--ink3); font-weight: 500; }
+  .detail-row .dv { font-size: 14px; font-weight: 500; text-align: right; }
+  .detail-row .dv a { color: var(--sup-blue); text-decoration: none; }
+  .detail-row .dv a:hover { text-decoration: underline; }
+
+  /* Tags */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    display: inline-flex; align-items: center; padding: 5px 12px;
+    font-size: 12px; font-weight: 600; border-radius: var(--r-pill);
+    background: var(--surface-alt); color: var(--ink2); border: 1px solid var(--hair);
+  }
+
+  .empty-state { padding: 32px 20px; text-align: center; color: var(--ink3); font-size: 13px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+    display: none; place-items: center; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: grid; }
+  .modal {
+    background: var(--surface); border-radius: var(--r-xl); width: 520px; max-width: 92vw;
+    max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow-lift); padding: 32px;
+  }
+  .modal h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  .modal .modal-sub { font-size: 13px; color: var(--ink3); margin-bottom: 24px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink2); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--hair-strong); border-radius: var(--r-md);
+    font-size: 14px; font-family: inherit; color: var(--ink); background: var(--surface);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--ink); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="logo" href="/" style="font-size:17px;padding:4px 8px"><span class="logo-mark">R</span> Remti</a>
+    <div style="margin-top:8px;padding:6px 10px;font-size:12px;color:var(--ink3)">Harbert &amp; Co &middot; Ltd</div>
+    <div class="sb-section"><h5>Workspace</h5>
+      <a class="sb-link" href="/dashboard"><span class="ic">&#8962;</span>Dashboard</a>
+      <a class="sb-link" href="/invoices"><span class="ic">&#9776;</span>Invoices<span class="count">17</span></a>
+      <a class="sb-link" href="/approvals"><span class="ic">&#10003;</span>Approvals<span class="count">3</span></a>
+      <a class="sb-link" href="/payrun"><span class="ic">&#9889;</span>Pay run</a>
+      <a class="sb-link active" href="/suppliers"><span class="ic">&#128101;</span>Suppliers</a>
+      <a class="sb-link" href="/reports"><span class="ic">&#9636;</span>Reports</a>
+    </div>
+    <div class="sb-section"><h5>Setup</h5>
+      <a class="sb-link" href="/bank-accounts"><span class="ic">&#8862;</span>Bank accounts</a>
+      <a class="sb-link" href="/integrations"><span class="ic">&#8644;</span>Integrations</a>
+      <a class="sb-link" href="/settings"><span class="ic">&#9881;</span>Settings</a>
+    </div>
+    <div class="sb-user" style="cursor:pointer" onclick="logout()" title="Click to log out">
+      <div class="avatar" style="background:var(--sup-blue);width:32px;height:32px">JM</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Jordan Morgan</div><div style="font-size:11px;color:var(--ink3)">Log out &#8599;</div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+
+    <a class="back-link" href="/suppliers">&larr; Back to suppliers</a>
+
+    <!-- Header -->
+    <div class="detail-header" id="detailHeader"></div>
+
+    <!-- Stats row -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- Two-column content -->
+    <div class="content-grid">
+
+      <!-- Left column: Invoices -->
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Invoices</h3>
+            <div class="tabs">
+              <div class="t active" data-tab="unpaid" onclick="switchTab('unpaid')">Unpaid <span class="tc" id="unpaidCount"></span></div>
+              <div class="t" data-tab="paid" onclick="switchTab('paid')">Paid <span class="tc" id="paidCount"></span></div>
+            </div>
+          </div>
+          <div id="unpaidPanel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Description</th>
+                  <th class="r">Amount</th>
+                  <th>Due date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="unpaidBody"></tbody>
+            </table>
+            <div class="empty-state" id="unpaidEmpty" style="display:none">No unpaid invoices.</div>
+          </div>
+          <div id="paidPanel" style="display:none">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Description</th>
+                  <th class="r">Amount</th>
+                  <th>Paid date</th>
+                  <th>Method</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="paidBody"></tbody>
+            </table>
+            <div class="empty-state" id="paidEmpty" style="display:none">No paid invoices.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div>
+        <!-- Contact info -->
+        <div class="panel" id="contactPanel"></div>
+
+        <!-- Payment details -->
+        <div class="panel" id="paymentPanel"></div>
+
+        <!-- Tags -->
+        <div class="panel" id="tagsPanel"></div>
+
+        <!-- Quick actions -->
+        <div class="panel">
+          <div class="panel-header"><h3>Quick actions</h3></div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;">
+            <a class="btn btn-primary" href="/payrun" style="width:100%;text-align:center">Pay all outstanding</a>
+            <button class="btn btn-secondary" style="width:100%" onclick="alert('Statement download coming soon')">Download statement</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Edit supplier modal -->
+<div class="modal-overlay" id="editOverlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <h2>Edit supplier</h2>
+    <div class="modal-sub">Update supplier details</div>
+    <div class="field">
+      <label>Supplier name</label>
+      <input type="text" id="eName"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Category</label>
+        <input type="text" id="eCategory"/>
+      </div>
+      <div class="field">
+        <label>City</label>
+        <input type="text" id="eCity"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Contact name</label>
+      <input type="text" id="eContact"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="eEmail"/>
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="ePhone"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Address</label>
+      <input type="text" id="eAddress"/>
+    </div>
+    <div class="field">
+      <label>Bank name</label>
+      <input type="text" id="eBank"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Sort code</label>
+        <input type="text" id="eSort"/>
+      </div>
+      <div class="field">
+        <label>Account number</label>
+        <input type="text" id="eAccount"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Payment terms</label>
+        <select id="eTerms">
+          <option value="Net 15">Net 15</option>
+          <option value="Net 30">Net 30</option>
+          <option value="Net 45">Net 45</option>
+          <option value="Net 60">Net 60</option>
+          <option value="Due on receipt">Due on receipt</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tax ID</label>
+        <input type="text" id="eTax"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="closeEdit()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function() {
+  // Get supplier ID from URL
+  const params = new URLSearchParams(window.location.search);
+  const supId = params.get('id') || 'sup-001';
+  const supplier = DATA.suppliers.find(s => s.id === supId);
+  if (!supplier) { document.querySelector('.main').innerHTML = '<div class="empty-state">Supplier not found.</div>'; return; }
+
+  const allInvoices = DATA.invoices.filter(i => i.supplierId === supId);
+  const unpaid = allInvoices.filter(i => i.status !== 'paid');
+  const paid = allInvoices.filter(i => i.status === 'paid');
+
+  // Page title
+  document.title = supplier.name + ' — Remti';
+
+  // Header
+  document.getElementById('detailHeader').innerHTML =
+    '<div class="avatar avatar-xl" style="background:' + supplier.color + '">' + supplier.initial + '</div>'
+    + '<div class="header-info">'
+    + '<h2>' + supplier.name + ' <span class="category-pill">' + supplier.category + '</span></h2>'
+    + '<div class="header-meta">' + supplier.city + ' · Last payment ' + supplier.lastPayment + '</div>'
+    + '</div>'
+    + '<button class="btn btn-secondary" onclick="openEdit()">Edit supplier</button>';
+
+  // Stats
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-value num' + (supplier.owed > 0 ? ' danger' : '') + '">' + fmt(supplier.owed) + '</div><div class="stat-sub">' + unpaid.length + ' unpaid invoice' + (unpaid.length !== 1 ? 's' : '') + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Paid YTD</div><div class="stat-value num">' + fmt(supplier.paidYTD) + '</div><div class="stat-sub">' + paid.length + ' paid this year</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Invoices</div><div class="stat-value num">' + allInvoices.length + '</div><div class="stat-sub">' + supplier.terms + ' payment terms</div></div>';
+
+  // Tab counts
+  document.getElementById('unpaidCount').textContent = unpaid.length;
+  document.getElementById('paidCount').textContent = paid.length;
+
+  // Unpaid table
+  function statusLabel(inv) {
+    if (inv.status === 'overdue') return '<span class="status-overdue">' + Math.abs(inv.daysUntilDue) + 'd overdue</span>';
+    if (inv.status === 'processing') return '<span class="status-processing">Processing</span>';
+    if (inv.status === 'draft') return '<span class="status-draft">Draft</span>';
+    return '<span class="status-due">Due in ' + inv.daysUntilDue + 'd</span>';
+  }
+
+  if (unpaid.length === 0) {
+    document.getElementById('unpaidEmpty').style.display = 'block';
+  } else {
+    document.getElementById('unpaidBody').innerHTML = unpaid.map(function(inv) {
+      var desc = inv.lineItems[0] ? inv.lineItems[0].desc : inv.category;
+      var actionLabel = inv.status === 'overdue' || inv.status === 'due' ? 'Pay' : 'Review';
+      return '<tr onclick="window.location.href=\'/invoice-detail?id=' + inv.id + '\'">'
+        + '<td style="font-weight:600">' + inv.number + '</td>'
+        + '<td style="color:var(--ink2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + desc + '</td>'
+        + '<td class="r"><span class="amt">' + fmt(inv.amount) + '</span></td>'
+        + '<td>' + inv.due + '</td>'
+        + '<td>' + statusLabel(inv) + '</td>'
+        + '<td><a class="btn btn-secondary btn-sm" href="/invoice-detail?id=' + inv.id + '" onclick="event.stopPropagation()">' + actionLabel + '</a></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // Paid table
+  if (paid.length === 0) {
+    document.getElementById('paidEmpty').style.display = 'block';
+  } else {
+    document.getElementById('paidBody').innerHTML = paid.map(function(inv) {
+      var desc = inv.lineItems[0] ? inv.lineItems[0].desc : inv.category;
+      return '<tr onclick="window.location.href=\'/invoice-detail?id=' + inv.id + '\'">'
+        + '<td style="font-weight:600">' + inv.number + '</td>'
+        + '<td style="color:var(--ink2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + desc + '</td>'
+        + '<td class="r"><span class="amt">' + fmt(inv.amount) + '</span></td>'
+        + '<td>' + inv.paidDate + '</td>'
+        + '<td style="color:var(--ink3);font-size:12px">' + (inv.paymentMethod || 'Bank Transfer') + '</td>'
+        + '<td><a class="btn btn-secondary btn-sm" href="/invoice-detail?id=' + inv.id + '" onclick="event.stopPropagation()">Receipt</a></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // Contact panel
+  document.getElementById('contactPanel').innerHTML =
+    '<div class="panel-header"><h3>Contact</h3></div>'
+    + '<div class="panel-body">'
+    + '<div class="detail-row"><span class="dl">Contact</span><span class="dv">' + supplier.contactName + '</span></div>'
+    + '<div class="detail-row"><span class="dl">Email</span><span class="dv"><a href="mailto:' + supplier.email + '">' + supplier.email + '</a></span></div>'
+    + '<div class="detail-row"><span class="dl">Phone</span><span class="dv"><a href="tel:' + supplier.phone + '">' + supplier.phone + '</a></span></div>'
+    + '<div class="detail-row"><span class="dl">Address</span><span class="dv">' + supplier.address + '</span></div>'
+    + '</div>';
+
+  // Payment panel — mask sort code and account
+  var sc = supplier.sortCode || '';
+  var maskSort = sc.length >= 6 ? sc.slice(0,2) + '-' + sc.slice(2,4) + '-' + sc.slice(4,6) : '--';
+  var maskAccount = supplier.accountLast4 ? '••••' + supplier.accountLast4 : '--';
+
+  document.getElementById('paymentPanel').innerHTML =
+    '<div class="panel-header"><h3>Payment details</h3><button class="btn btn-ghost btn-sm" onclick="openEdit()">Edit</button></div>'
+    + '<div class="panel-body">'
+    + '<div class="detail-row"><span class="dl">Method</span><span class="dv">' + (supplier.paymentMethod || 'Bank Transfer') + '</span></div>'
+    + '<div class="detail-row"><span class="dl">Bank</span><span class="dv">' + supplier.bankName + '</span></div>'
+    + '<div class="detail-row"><span class="dl">Sort code</span><span class="dv" style="font-variant-numeric:tabular-nums">' + maskSort + '</span></div>'
+    + '<div class="detail-row"><span class="dl">Account</span><span class="dv" style="font-variant-numeric:tabular-nums">' + maskAccount + '</span></div>'
+    + '<div class="detail-row"><span class="dl">Tax ID</span><span class="dv">' + supplier.taxId + '</span></div>'
+    + '</div>';
+
+  // Tags panel
+  if (supplier.tags && supplier.tags.length > 0) {
+    document.getElementById('tagsPanel').innerHTML =
+      '<div class="panel-header"><h3>Tags</h3></div>'
+      + '<div class="panel-body"><div class="tag-list">'
+      + supplier.tags.map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('')
+      + '</div></div>';
+  } else {
+    document.getElementById('tagsPanel').style.display = 'none';
+  }
+
+  // Tab switching
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tabs .t').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.tab === tab);
+    });
+    document.getElementById('unpaidPanel').style.display = tab === 'unpaid' ? '' : 'none';
+    document.getElementById('paidPanel').style.display = tab === 'paid' ? '' : 'none';
+  };
+
+  // Edit modal
+  window.openEdit = function() {
+    document.getElementById('eName').value = supplier.name;
+    document.getElementById('eCategory').value = supplier.category;
+    document.getElementById('eCity').value = supplier.city;
+    document.getElementById('eContact').value = supplier.contactName;
+    document.getElementById('eEmail').value = supplier.email;
+    document.getElementById('ePhone').value = supplier.phone;
+    document.getElementById('eAddress').value = supplier.address;
+    document.getElementById('eBank').value = supplier.bankName;
+    document.getElementById('eSort').value = supplier.sortCode || '';
+    document.getElementById('eAccount').value = supplier.accountNumber || '';
+    document.getElementById('eTerms').value = supplier.terms;
+    document.getElementById('eTax').value = supplier.taxId;
+    document.getElementById('editOverlay').classList.add('open');
+  };
+  window.closeEdit = function() {
+    document.getElementById('editOverlay').classList.remove('open');
+  };
+})();
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+</script>
+</body>
+</html>
